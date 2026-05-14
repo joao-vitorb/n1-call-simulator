@@ -23,9 +23,9 @@ export function BrowserShell() {
   const [activeTab, setActiveTab] = useState<TabId>('training-call');
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-200">
+    <div className="flex h-screen flex-col bg-zinc-200">
       <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
-      <main className="flex-1 bg-white">{renderActiveTab(activeTab)}</main>
+      <main className="flex flex-1 overflow-hidden bg-white">{renderActiveTab(activeTab)}</main>
     </div>
   );
 }
