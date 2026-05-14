@@ -1,20 +1,24 @@
 import { useAuth } from '../../contexts/AuthContext';
 import { TABS, type TabId } from '../../types/tab';
 
-const ACTIVE_TAB_PLACEHOLDER: TabId = 'training-call';
+type TabBarProps = {
+  activeTab: TabId;
+  onTabChange: (tabId: TabId) => void;
+};
 
-export function TabBar() {
+export function TabBar({ activeTab, onTabChange }: TabBarProps) {
   const { currentUser, logout } = useAuth();
 
   return (
     <nav className="flex items-end justify-between gap-4 border-b border-zinc-300 bg-zinc-200 px-3 pt-2">
       <div className="flex items-end gap-1">
         {TABS.map((tab) => {
-          const isActive = tab.id === ACTIVE_TAB_PLACEHOLDER;
+          const isActive = tab.id === activeTab;
           return (
             <button
               key={tab.id}
               type="button"
+              onClick={() => onTabChange(tab.id)}
               className={
                 isActive
                   ? 'rounded-t-lg bg-white px-4 py-2 text-sm font-medium text-zinc-900 shadow-sm'
