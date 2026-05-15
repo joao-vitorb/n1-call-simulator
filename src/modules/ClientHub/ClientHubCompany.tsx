@@ -6,7 +6,7 @@ import { CompanyHeader } from './CompanyHeader';
 import { CompanyTabs, type CompanyTabId } from './CompanyTabs';
 import { CompanyClient } from './CompanyClient';
 import { CompanyContracts } from './CompanyContracts';
-import { ScriptIntegradoModal } from './ScriptIntegrado/ScriptIntegradoModal';
+import { TechFormModal, type TechFormKind } from './ScriptIntegrado/TechFormModal';
 import type { Company } from '../../types/company';
 import type { Protocol } from '../../types/protocol';
 import type { Contract } from '../../types/contract';
@@ -29,7 +29,7 @@ export function ClientHubCompany({
 }: ClientHubCompanyProps) {
   const [activeTab, setActiveTab] = useState<CompanyTabId>('cliente');
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
-  const [scriptOpen, setScriptOpen] = useState(false);
+  const [openTechForm, setOpenTechForm] = useState<TechFormKind | null>(null);
 
   return (
     <section className="flex flex-1">
@@ -45,7 +45,7 @@ export function ClientHubCompany({
           activeTab={activeTab}
           onTabChange={setActiveTab}
           hasSelectedContract={selectedContract !== null}
-          onOpenScript={() => setScriptOpen(true)}
+          onOpenTechForm={setOpenTechForm}
         />
         <div className="flex-1 bg-zinc-50 p-6">
           {activeTab === 'cliente' && <CompanyClient company={company} />}
@@ -59,10 +59,11 @@ export function ClientHubCompany({
         </div>
       </div>
 
-      {scriptOpen && selectedContract && (
-        <ScriptIntegradoModal
+      {openTechForm && selectedContract && (
+        <TechFormModal
+          kind={openTechForm}
           contract={selectedContract}
-          onClose={() => setScriptOpen(false)}
+          onClose={() => setOpenTechForm(null)}
         />
       )}
     </section>

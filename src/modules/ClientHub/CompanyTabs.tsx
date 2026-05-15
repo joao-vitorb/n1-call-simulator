@@ -1,21 +1,27 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import type { TechFormKind } from './ScriptIntegrado/TechFormModal';
 
 export type CompanyTabId = 'cliente' | 'contratos';
 
-const TECH_OPTIONS = ['Script integrado', 'Visita técnica', 'RFO', 'Programação de serviço'];
+const TECH_OPTIONS: { kind: TechFormKind; label: string }[] = [
+  { kind: 'script-integrado', label: 'Script integrado' },
+  { kind: 'visita-tecnica', label: 'Visita técnica' },
+  { kind: 'rfo', label: 'RFO' },
+  { kind: 'programacao-servicos', label: 'Programação de serviço' },
+];
 
 type CompanyTabsProps = {
   activeTab: CompanyTabId;
   onTabChange: (tab: CompanyTabId) => void;
   hasSelectedContract: boolean;
-  onOpenScript: () => void;
+  onOpenTechForm: (kind: TechFormKind) => void;
 };
 
 export function CompanyTabs({
   activeTab,
   onTabChange,
   hasSelectedContract,
-  onOpenScript,
+  onOpenTechForm,
 }: CompanyTabsProps) {
   const [techOpen, setTechOpen] = useState(false);
   const [techError, setTechError] = useState<string | null>(null);
@@ -36,11 +42,9 @@ export function CompanyTabs({
     setTechOpen((open) => !open);
   }
 
-  function handleTechOption(option: string) {
+  function handleTechOption(kind: TechFormKind) {
     setTechOpen(false);
-    if (option === 'Script integrado') {
-      onOpenScript();
-    }
+    onOpenTechForm(kind);
   }
 
   return (
@@ -69,12 +73,12 @@ export function CompanyTabs({
         <div className="absolute right-6 top-full z-10 mt-1 w-56 rounded-md border border-zinc-200 bg-white shadow-md">
           {TECH_OPTIONS.map((option) => (
             <button
-              key={option}
+              key={option.kind}
               type="button"
-              onClick={() => handleTechOption(option)}
+              onClick={() => handleTechOption(option.kind)}
               className="block w-full px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
             >
-              {option}
+              {option.label}
             </button>
           ))}
         </div>

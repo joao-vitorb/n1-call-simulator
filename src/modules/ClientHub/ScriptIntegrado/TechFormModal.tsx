@@ -3,14 +3,25 @@ import type { Contract, ProductType } from '../../../types/contract';
 import { InternetLinkScript } from './InternetLinkScript';
 import { BandaLargaScript } from './BandaLargaScript';
 import { VozTotalScript } from './VozTotalScript';
+import { RfoForm } from './RfoForm';
 import type { ScriptResult } from './types';
 
-type ScriptIntegradoModalProps = {
+export type TechFormKind = 'script-integrado' | 'rfo' | 'visita-tecnica' | 'programacao-servicos';
+
+const TITLES: Record<TechFormKind, string> = {
+  'script-integrado': 'Script integrado',
+  rfo: 'RFO',
+  'visita-tecnica': 'Visita técnica',
+  'programacao-servicos': 'Programação de serviços',
+};
+
+type TechFormModalProps = {
+  kind: TechFormKind;
   contract: Contract;
   onClose: () => void;
 };
 
-export function ScriptIntegradoModal({ contract, onClose }: ScriptIntegradoModalProps) {
+export function TechFormModal({ kind, contract, onClose }: TechFormModalProps) {
   const [result, setResult] = useState<ScriptResult | null>(null);
 
   return (
@@ -27,7 +38,7 @@ export function ScriptIntegradoModal({ contract, onClose }: ScriptIntegradoModal
 
         <div className="p-6">
           <p className="mb-1 text-xs uppercase tracking-wide text-zinc-500">
-            Script integrado · {contract.productType}
+            {TITLES[kind]} · {contract.productType}
           </p>
           <p className="mb-4 text-sm text-zinc-600">
             Contrato {contract.contractNumber} · Circuito {contract.circuit}
@@ -36,7 +47,8 @@ export function ScriptIntegradoModal({ contract, onClose }: ScriptIntegradoModal
           {result ? (
             <ResultPanel result={result} onClose={onClose} />
           ) : (
-            <ScriptByProduct
+            <FormByKind
+              kind={kind}
               productType={contract.productType}
               onComplete={setResult}
               onCancel={onClose}
@@ -48,20 +60,50 @@ export function ScriptIntegradoModal({ contract, onClose }: ScriptIntegradoModal
   );
 }
 
-type ScriptByProductProps = {
+type FormByKindProps = {
+  kind: TechFormKind;
   productType: ProductType;
   onComplete: (result: ScriptResult) => void;
   onCancel: () => void;
 };
 
-function ScriptByProduct({ productType, onComplete, onCancel }: ScriptByProductProps) {
-  if (productType === 'Internet Link') {
-    return <InternetLinkScript onComplete={onComplete} onCancel={onCancel} />;
+function FormByKind({ kind, productType, onComplete, onCancel }: FormByKindProps) {
+  if (kind === 'script-integrado') {
+    if (productType === 'Internet Link') {
+      return <InternetLinkScript onComplete={onComplete} onCancel={onCancel} />;
+    }
+    if (productType === 'Banda Larga') {
+      return <BandaLargaScript onComplete={onComplete} onCancel={onCancel} />;
+    }
+    return <VozTotalScript onComplete={onComplete} onCancel={onCancel} />;
   }
-  if (productType === 'Banda Larga') {
-    return <BandaLargaScript onComplete={onComplete} onCancel={onCancel} />;
+  if (kind === 'rfo') {
+    return <RfoForm onComplete={onComplete} onCancel={onCancel} />;
   }
-  return <VozTotalScript onComplete={onComplete} onCancel={onCancel} />;
+  return <UnderConstructionPanel onCancel={onCancel} />;
+}
+
+type UnderConstructionPanelProps = {
+  onCancel: () => void;
+};
+
+function UnderConstructionPanel({ onCancel }: UnderConstructionPanelProps) {
+  return (
+    <div className="space-y-3">
+      <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-5">
+        <p className="text-sm text-zinc-700">Em construção.</p>
+      </div>
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+        >
+          Fechar
+        </button>
+      </div>
+    </div>
+  );
 }
 
 type ResultPanelProps = {
