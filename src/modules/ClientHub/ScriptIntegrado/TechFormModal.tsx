@@ -5,6 +5,7 @@ import { BandaLargaScript } from './BandaLargaScript';
 import { VozTotalScript } from './VozTotalScript';
 import { RfoForm } from './RfoForm';
 import { VisitaTecnicaForm } from './VisitaTecnicaForm';
+import { ProgramacaoServicosForm } from './ProgramacaoServicosForm';
 import type { ScriptResult } from './types';
 
 export type TechFormKind = 'script-integrado' | 'rfo' | 'visita-tecnica' | 'programacao-servicos';
@@ -83,6 +84,9 @@ function FormByKind({ kind, productType, onComplete, onCancel }: FormByKindProps
   }
   if (kind === 'visita-tecnica') {
     return <VisitaTecnicaForm onComplete={onComplete} onCancel={onCancel} />;
+  }
+  if (kind === 'programacao-servicos') {
+    return <ProgramacaoServicosForm onComplete={onComplete} onCancel={onCancel} />;
   }
   return <UnderConstructionPanel onCancel={onCancel} />;
 }
