@@ -6,6 +6,7 @@ import { CompanyHeader } from './CompanyHeader';
 import { CompanyTabs, type CompanyTabId } from './CompanyTabs';
 import { CompanyClient } from './CompanyClient';
 import { CompanyContracts } from './CompanyContracts';
+import { ScriptIntegradoModal } from './ScriptIntegrado/ScriptIntegradoModal';
 import type { Company } from '../../types/company';
 import type { Protocol } from '../../types/protocol';
 import type { Contract } from '../../types/contract';
@@ -28,6 +29,7 @@ export function ClientHubCompany({
 }: ClientHubCompanyProps) {
   const [activeTab, setActiveTab] = useState<CompanyTabId>('cliente');
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [scriptOpen, setScriptOpen] = useState(false);
 
   return (
     <section className="flex flex-1">
@@ -43,6 +45,7 @@ export function ClientHubCompany({
           activeTab={activeTab}
           onTabChange={setActiveTab}
           hasSelectedContract={selectedContract !== null}
+          onOpenScript={() => setScriptOpen(true)}
         />
         <div className="flex-1 bg-zinc-50 p-6">
           {activeTab === 'cliente' && <CompanyClient company={company} />}
@@ -55,6 +58,13 @@ export function ClientHubCompany({
           )}
         </div>
       </div>
+
+      {scriptOpen && selectedContract && (
+        <ScriptIntegradoModal
+          contract={selectedContract}
+          onClose={() => setScriptOpen(false)}
+        />
+      )}
     </section>
   );
 }

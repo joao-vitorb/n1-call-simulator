@@ -8,9 +8,15 @@ type CompanyTabsProps = {
   activeTab: CompanyTabId;
   onTabChange: (tab: CompanyTabId) => void;
   hasSelectedContract: boolean;
+  onOpenScript: () => void;
 };
 
-export function CompanyTabs({ activeTab, onTabChange, hasSelectedContract }: CompanyTabsProps) {
+export function CompanyTabs({
+  activeTab,
+  onTabChange,
+  hasSelectedContract,
+  onOpenScript,
+}: CompanyTabsProps) {
   const [techOpen, setTechOpen] = useState(false);
   const [techError, setTechError] = useState<string | null>(null);
 
@@ -28,6 +34,13 @@ export function CompanyTabs({ activeTab, onTabChange, hasSelectedContract }: Com
     }
     setTechError(null);
     setTechOpen((open) => !open);
+  }
+
+  function handleTechOption(option: string) {
+    setTechOpen(false);
+    if (option === 'Script integrado') {
+      onOpenScript();
+    }
   }
 
   return (
@@ -58,7 +71,7 @@ export function CompanyTabs({ activeTab, onTabChange, hasSelectedContract }: Com
             <button
               key={option}
               type="button"
-              onClick={() => setTechOpen(false)}
+              onClick={() => handleTechOption(option)}
               className="block w-full px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
             >
               {option}
