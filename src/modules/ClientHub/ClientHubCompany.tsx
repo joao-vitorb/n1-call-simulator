@@ -62,6 +62,7 @@ export function ClientHubCompany({
       {openTechForm && selectedContract && (
         <TechFormModal
           kind={openTechForm}
+          company={company}
           contract={selectedContract}
           onClose={() => setOpenTechForm(null)}
         />

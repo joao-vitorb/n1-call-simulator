@@ -12,16 +12,23 @@ export function SomSearchForm({ scope, onSearch, onClear }: SomSearchFormProps) 
   const [osNumber, setOsNumber] = useState('');
   const [circuit, setCircuit] = useState('');
   const [cnpj, setCnpj] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setProtocol('');
     setOsNumber('');
     setCircuit('');
     setCnpj('');
+    setError(null);
   }, [scope]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!protocol.trim() && !osNumber.trim() && !circuit.trim() && !cnpj.trim()) {
+      setError('Preencha pelo menos um filtro para buscar.');
+      return;
+    }
+    setError(null);
     onSearch({ protocol, serviceOrderNumber: osNumber, circuit, cnpj });
   }
 
@@ -30,6 +37,7 @@ export function SomSearchForm({ scope, onSearch, onClear }: SomSearchFormProps) 
     setOsNumber('');
     setCircuit('');
     setCnpj('');
+    setError(null);
     onClear();
   }
 
@@ -63,6 +71,7 @@ export function SomSearchForm({ scope, onSearch, onClear }: SomSearchFormProps) 
           Limpar
         </button>
       </div>
+      {error && <p className="mt-3 text-xs text-red-600">{error}</p>}
     </form>
   );
 }

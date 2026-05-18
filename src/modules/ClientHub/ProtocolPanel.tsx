@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { generateProtocol } from '../../utils/protocolGenerator';
+import { useTrainingSession } from '../../contexts/TrainingSessionContext';
 import type { Protocol } from '../../types/protocol';
 
 const PREFERENCE_OPTIONS = ['Email', 'Telefone', 'SMS', 'Email/Telefone', 'Prefere não ser contatado'];
@@ -10,6 +11,7 @@ type ProtocolPanelProps = {
 };
 
 export function ProtocolPanel({ contextProtocol }: ProtocolPanelProps) {
+  const { activeCall, updateCallForm } = useTrainingSession();
   const [ddd1, setDdd1] = useState('');
   const [phone1, setPhone1] = useState('');
   const [ddd2, setDdd2] = useState('');
@@ -59,7 +61,11 @@ export function ProtocolPanel({ contextProtocol }: ProtocolPanelProps) {
       return;
     }
     setError(null);
-    setProtocolNumber(generateProtocol());
+    const newProtocol = generateProtocol();
+    setProtocolNumber(newProtocol);
+    if (activeCall && !activeCall.saved) {
+      updateCallForm(activeCall.id, { protocol: newProtocol });
+    }
   }
 
   return (

@@ -1,5 +1,11 @@
 import { useState } from 'react';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useCreatedOrders } from '../../../contexts/CreatedOrdersContext';
+import { useTrainingSession } from '../../../contexts/TrainingSessionContext';
+import { buildServiceOrder } from '../../../utils/serviceOrders';
+import type { Company } from '../../../types/company';
 import type { Contract, ProductType } from '../../../types/contract';
+import type { ServiceOrderType } from '../../../types/serviceOrder';
 import { InternetLinkScript } from './InternetLinkScript';
 import { BandaLargaScript } from './BandaLargaScript';
 import { VozTotalScript } from './VozTotalScript';
@@ -17,14 +23,41 @@ const TITLES: Record<TechFormKind, string> = {
   'programacao-servicos': 'Programação de serviços',
 };
 
+const KIND_TO_OS_TYPE: Record<TechFormKind, ServiceOrderType> = {
+  'script-integrado': 'Incidente',
+  rfo: 'RFO',
+  'visita-tecnica': 'Visita técnica',
+  'programacao-servicos': 'Programação de serviços',
+};
+
 type TechFormModalProps = {
   kind: TechFormKind;
   contract: Contract;
+  company: Company;
   onClose: () => void;
 };
 
-export function TechFormModal({ kind, contract, onClose }: TechFormModalProps) {
+export function TechFormModal({ kind, contract, company, onClose }: TechFormModalProps) {
+  const { currentUser } = useAuth();
+  const { registerOrder } = useCreatedOrders();
+  const { activeCall } = useTrainingSession();
   const [result, setResult] = useState<ScriptResult | null>(null);
+
+  function handleComplete(scriptResult: ScriptResult) {
+    if (scriptResult.kind === 'os-opened') {
+      const order = buildServiceOrder({
+        type: KIND_TO_OS_TYPE[kind],
+        company,
+        contract,
+        osNumber: scriptResult.osNumber,
+        protocol: activeCall?.formState.protocol ?? '',
+        createdBy: currentUser?.username ?? 'desconhecido',
+        observation: scriptResult.observation,
+      });
+      registerOrder(order);
+    }
+    setResult(scriptResult);
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/50 p-4">
@@ -52,7 +85,7 @@ export function TechFormModal({ kind, contract, onClose }: TechFormModalProps) {
             <FormByKind
               kind={kind}
               productType={contract.productType}
-              onComplete={setResult}
+              onComplete={handleComplete}
               onCancel={onClose}
             />
           )}
@@ -85,33 +118,7 @@ function FormByKind({ kind, productType, onComplete, onCancel }: FormByKindProps
   if (kind === 'visita-tecnica') {
     return <VisitaTecnicaForm onComplete={onComplete} onCancel={onCancel} />;
   }
-  if (kind === 'programacao-servicos') {
-    return <ProgramacaoServicosForm onComplete={onComplete} onCancel={onCancel} />;
-  }
-  return <UnderConstructionPanel onCancel={onCancel} />;
-}
-
-type UnderConstructionPanelProps = {
-  onCancel: () => void;
-};
-
-function UnderConstructionPanel({ onCancel }: UnderConstructionPanelProps) {
-  return (
-    <div className="space-y-3">
-      <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-5">
-        <p className="text-sm text-zinc-700">Em construção.</p>
-      </div>
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-        >
-          Fechar
-        </button>
-      </div>
-    </div>
-  );
+  return <ProgramacaoServicosForm onComplete={onComplete} onCancel={onCancel} />;
 }
 
 type ResultPanelProps = {
@@ -126,6 +133,9 @@ function ResultPanel({ result, onClose }: ResultPanelProps) {
         <p className="text-sm font-medium text-emerald-800">Finalizado com abertura de OS</p>
         <p className="mt-2 text-sm text-emerald-700">
           OS gerada: <span className="font-mono font-medium">{result.osNumber}</span>
+        </p>
+        <p className="mt-2 text-xs text-emerald-700">
+          A OS já está disponível no módulo Service Orders.
         </p>
         <button
           type="button"

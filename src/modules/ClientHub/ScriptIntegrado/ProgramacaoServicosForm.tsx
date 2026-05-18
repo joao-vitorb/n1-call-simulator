@@ -20,7 +20,7 @@ export function ProgramacaoServicosForm({ onComplete, onCancel }: ProgramacaoSer
       return;
     }
     setError(null);
-    onComplete({ kind: 'os-opened', osNumber: generateOsNumber() });
+    onComplete({ kind: 'os-opened', osNumber: generateOsNumber(), observation });
   }
 
   return (
