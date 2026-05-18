@@ -2,15 +2,28 @@ import { useState } from 'react';
 import { ClientHubMain } from './ClientHubMain';
 import { ClientHubCompany } from './ClientHubCompany';
 import { searchCompany, type SearchType } from '../../utils/search';
+import { findCompanyById } from '../../utils/companies';
+import { useTrainingSession } from '../../contexts/TrainingSessionContext';
 import type { Company } from '../../types/company';
 import type { Protocol } from '../../types/protocol';
 
 export function ClientHub() {
+  const { activeCall } = useTrainingSession();
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [contextProtocol, setContextProtocol] = useState<Protocol | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
 
   function handleSearch(type: SearchType, value: string) {
+    const trimmed = value.trim();
+    if (type === 'protocol' && activeCall && activeCall.formState.protocol === trimmed) {
+      const company = findCompanyById(activeCall.scenario.companyId);
+      if (company) {
+        setSelectedCompany(company);
+        setContextProtocol(null);
+        setSearchError(null);
+        return;
+      }
+    }
     const result = searchCompany(type, value);
     if (!result) {
       setSearchError('Nenhum resultado encontrado.');
@@ -22,6 +35,8 @@ export function ClientHub() {
   }
 
   function handleClearSearch() {
+    setSelectedCompany(null);
+    setContextProtocol(null);
     setSearchError(null);
   }
 

@@ -24,7 +24,7 @@ export function VisitaTecnicaForm({ onComplete, onCancel }: VisitaTecnicaFormPro
       return;
     }
     setError(null);
-    onComplete({ kind: 'os-opened', osNumber: generateOsNumber() });
+    onComplete({ kind: 'os-opened', osNumber: generateOsNumber(), observation });
   }
 
   return (

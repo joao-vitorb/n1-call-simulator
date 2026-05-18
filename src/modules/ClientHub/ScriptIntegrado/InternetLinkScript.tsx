@@ -63,7 +63,7 @@ export function InternetLinkScript({ onComplete, onCancel }: InternetLinkScriptP
       return;
     }
     setError(null);
-    onComplete({ kind: 'os-opened', osNumber: generateOsNumber() });
+    onComplete({ kind: 'os-opened', osNumber: generateOsNumber(), observation: description });
   }
 
   if (page === 1) {

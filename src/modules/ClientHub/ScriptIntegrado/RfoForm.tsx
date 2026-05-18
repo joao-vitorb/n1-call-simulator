@@ -54,7 +54,7 @@ export function RfoForm({ onComplete, onCancel }: RfoFormProps) {
       return;
     }
     setError(null);
-    onComplete({ kind: 'os-opened', osNumber: generateOsNumber() });
+    onComplete({ kind: 'os-opened', osNumber: generateOsNumber(), observation });
   }
 
   return (

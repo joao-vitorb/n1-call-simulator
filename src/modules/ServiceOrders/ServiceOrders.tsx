@@ -1,18 +1,20 @@
 import { useState } from 'react';
 import { searchServiceOrders, type SomScope, type SomSearchFilters } from '../../utils/serviceOrders';
+import { useCreatedOrders } from '../../contexts/CreatedOrdersContext';
 import type { ServiceOrder } from '../../types/serviceOrder';
 import { SomSearchForm } from './SomSearchForm';
 import { SomResultsTable } from './SomResultsTable';
 import { SomOrderPage } from './SomOrderPage';
 
 export function ServiceOrders() {
+  const { createdOrders } = useCreatedOrders();
   const [scope, setScope] = useState<SomScope>('busca');
   const [results, setResults] = useState<ServiceOrder[] | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
 
   function handleSearch(filters: SomSearchFilters) {
     setSelectedOrder(null);
-    setResults(searchServiceOrders(filters, scope));
+    setResults(searchServiceOrders(filters, scope, createdOrders));
   }
 
   function handleClear() {

@@ -50,7 +50,7 @@ export function VozTotalScript({ onComplete, onCancel }: VozTotalScriptProps) {
       return;
     }
     setError(null);
-    onComplete({ kind: 'os-opened', osNumber: generateOsNumber() });
+    onComplete({ kind: 'os-opened', osNumber: generateOsNumber(), observation: description });
   }
 
   return (

@@ -2,6 +2,7 @@ import { useAuth } from './contexts/AuthContext';
 import { LoginScreen } from './components/LoginScreen/LoginScreen';
 import { BrowserShell } from './components/BrowserShell/BrowserShell';
 import { TrainingSessionProvider } from './contexts/TrainingSessionContext';
+import { CreatedOrdersProvider } from './contexts/CreatedOrdersContext';
 
 function App() {
   const { currentUser } = useAuth();
@@ -12,7 +13,9 @@ function App() {
 
   return (
     <TrainingSessionProvider>
-      <BrowserShell />
+      <CreatedOrdersProvider>
+        <BrowserShell />
+      </CreatedOrdersProvider>
     </TrainingSessionProvider>
   );
 }
