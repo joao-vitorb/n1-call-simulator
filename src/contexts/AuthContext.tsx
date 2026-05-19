@@ -21,6 +21,19 @@ function readStoredUser(): User | null {
   }
 }
 
+function clearOtherSessionState() {
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('n1_') && key !== STORAGE_KEY) {
+      keysToRemove.push(key);
+    }
+  }
+  for (const key of keysToRemove) {
+    localStorage.removeItem(key);
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(() => readStoredUser());
 
@@ -41,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function logout() {
+    clearOtherSessionState();
     setCurrentUser(null);
   }
 
