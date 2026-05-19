@@ -17,12 +17,13 @@ export function CompanySearchCard({ onSearch, onClear, searchError }: CompanySea
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const entries: { type: SearchType; value: string }[] = [
+    const candidates: { type: SearchType; value: string }[] = [
       { type: 'legalName', value: legalName.trim() },
       { type: 'cnpj', value: cnpj.trim() },
       { type: 'protocol', value: protocol.trim() },
       { type: 'circuit', value: circuit.trim() },
-    ].filter((entry) => entry.value !== '');
+    ];
+    const entries = candidates.filter((entry) => entry.value !== '');
 
     if (entries.length === 0) {
       setLocalError('Preencha um dos campos para buscar.');
