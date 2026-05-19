@@ -3,6 +3,7 @@ import { findCompanyById, findContractByNumber } from '../utils/companies';
 import { generateProtocol } from '../utils/protocolGenerator';
 import type { CallEntry, CallFormState } from '../types/trainingCall';
 import type { Scenario } from '../types/scenario';
+import type { ConversationMessage } from '../services/conversationProvider';
 
 function buildInitialFormState(scenario: Scenario): CallFormState {
   const company = findCompanyById(scenario.companyId);
@@ -35,6 +36,7 @@ type TrainingSessionValue = {
   selectFinishedCall: (id: string | null) => void;
   updateCallForm: (id: string, updates: Partial<CallFormState>) => void;
   saveCall: (id: string) => void;
+  appendMessage: (id: string, message: ConversationMessage) => void;
 };
 
 const TrainingSessionContext = createContext<TrainingSessionValue | undefined>(undefined);
@@ -47,6 +49,11 @@ export function TrainingSessionProvider({ children }: { children: ReactNode }) {
 
   function receiveCall(scenario: Scenario) {
     const startedAt = new Date().toISOString();
+    const openingMessage: ConversationMessage = {
+      role: 'customer',
+      text: scenario.openingLine,
+      timestamp: startedAt,
+    };
     const entry: CallEntry = {
       id: startedAt,
       scenario,
@@ -56,6 +63,7 @@ export function TrainingSessionProvider({ children }: { children: ReactNode }) {
       durationSeconds: null,
       formState: buildInitialFormState(scenario),
       saved: false,
+      messages: [openingMessage],
     };
     setActiveCall(entry);
     setViewingCallId(null);
@@ -104,6 +112,20 @@ export function TrainingSessionProvider({ children }: { children: ReactNode }) {
     );
   }
 
+  function appendMessage(id: string, message: ConversationMessage) {
+    if (activeCall?.id === id) {
+      setActiveCall((current) =>
+        current ? { ...current, messages: [...current.messages, message] } : null,
+      );
+      return;
+    }
+    setFinishedCalls((prev) =>
+      prev.map((call) =>
+        call.id === id ? { ...call, messages: [...call.messages, message] } : call,
+      ),
+    );
+  }
+
   return (
     <TrainingSessionContext.Provider
       value={{
@@ -116,6 +138,7 @@ export function TrainingSessionProvider({ children }: { children: ReactNode }) {
         selectFinishedCall,
         updateCallForm,
         saveCall,
+        appendMessage,
       }}
     >
       {children}

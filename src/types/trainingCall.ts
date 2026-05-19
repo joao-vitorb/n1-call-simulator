@@ -1,4 +1,5 @@
 import type { Scenario } from './scenario';
+import type { ConversationMessage } from '../services/conversationProvider';
 
 export type CallFormState = {
   level1: string;
@@ -25,4 +26,5 @@ export type CallEntry = {
   durationSeconds: number | null;
   formState: CallFormState;
   saved: boolean;
+  messages: ConversationMessage[];
 };
