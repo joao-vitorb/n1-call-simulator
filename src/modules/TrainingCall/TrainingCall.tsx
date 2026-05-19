@@ -1,9 +1,23 @@
 import { useTrainingSession } from '../../contexts/TrainingSessionContext';
 import { useElapsedTime } from '../../hooks/useElapsedTime';
+import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
 import { pickRandomScenario } from '../../services/scenarioEngine';
 import { CallSidebar } from './CallSidebar';
 import { CallStage } from './CallStage';
 import { CallCategorization } from './CallCategorization';
+
+function speedToRate(speed: string): number {
+  const normalized = speed.toLowerCase();
+  if (normalized.includes('lenta') || normalized.includes('pausa')) return 0.85;
+  if (
+    normalized.includes('rápida') ||
+    normalized.includes('rapida') ||
+    normalized.includes('aceler')
+  ) {
+    return 1.15;
+  }
+  return 1;
+}
 
 export function TrainingCall() {
   const {
@@ -18,12 +32,20 @@ export function TrainingCall() {
     saveCall,
   } = useTrainingSession();
   const onlineSeconds = useElapsedTime(onlineSince);
+  const { speak, cancel: cancelSpeech } = useSpeechSynthesis();
 
   const viewingCall =
     activeCall ?? finishedCalls.find((call) => call.id === viewingCallId) ?? null;
 
   function handleReceiveCall() {
-    receiveCall(pickRandomScenario());
+    const scenario = pickRandomScenario();
+    receiveCall(scenario);
+    speak(scenario.openingLine, { rate: speedToRate(scenario.voiceProfile.speed) });
+  }
+
+  function handleHangUp() {
+    cancelSpeech();
+    hangUp();
   }
 
   return (
@@ -37,7 +59,11 @@ export function TrainingCall() {
         onSelectCall={selectFinishedCall}
       />
       <div className="flex flex-1 flex-col">
-        <CallStage activeCall={activeCall} onReceive={handleReceiveCall} onHangUp={hangUp} />
+        <CallStage
+          activeCall={activeCall}
+          onReceive={handleReceiveCall}
+          onHangUp={handleHangUp}
+        />
         {viewingCall ? (
           <CallCategorization
             call={viewingCall}
