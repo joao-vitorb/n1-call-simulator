@@ -4,11 +4,19 @@ import type { CallEntry } from '../../types/trainingCall';
 
 type CallStageProps = {
   activeCall: CallEntry | null;
+  muted: boolean;
   onReceive: () => void;
   onHangUp: () => void;
+  onToggleMute: () => void;
 };
 
-export function CallStage({ activeCall, onReceive, onHangUp }: CallStageProps) {
+export function CallStage({
+  activeCall,
+  muted,
+  onReceive,
+  onHangUp,
+  onToggleMute,
+}: CallStageProps) {
   const callSeconds = useElapsedTime(activeCall?.startedAt ?? null);
 
   if (!activeCall) {
@@ -49,9 +57,15 @@ export function CallStage({ activeCall, onReceive, onHangUp }: CallStageProps) {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+            onClick={onToggleMute}
+            aria-pressed={muted}
+            className={`rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+              muted
+                ? 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100'
+                : 'border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50'
+            }`}
           >
-            Mute
+            {muted ? 'Mutado' : 'Mute'}
           </button>
           <button
             type="button"
@@ -73,15 +87,6 @@ export function CallStage({ activeCall, onReceive, onHangUp }: CallStageProps) {
             Desligar
           </button>
         </div>
-      </div>
-
-      <div className="border-t border-zinc-200 bg-white px-6 py-3 text-sm">
-        <p className="text-zinc-700">
-          <span className="font-medium">{activeCall.scenario.contactName}</span>
-          {' · '}
-          <span className="text-zinc-500">{activeCall.scenario.companyLegalName}</span>
-        </p>
-        <p className="mt-1 italic text-zinc-600">"{activeCall.scenario.openingLine}"</p>
       </div>
     </div>
   );

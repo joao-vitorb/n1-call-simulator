@@ -1,15 +1,18 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 export type SpeakOptions = {
   rate?: number;
   pitch?: number;
   lang?: string;
+  onStart?: () => void;
+  onEnd?: () => void;
 };
 
 export function useSpeechSynthesis() {
   const supported =
-    typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+    typeof window !== 'undefined' &&
+    'speechSynthesis' in window &&
+    'SpeechSynthesisUtterance' in window;
 
   useEffect(() => {
     return () => {
@@ -20,10 +23,12 @@ export function useSpeechSynthesis() {
   }, [supported]);
 
   function speak(text: string, options: SpeakOptions = {}) {
-    if (!supported || !text.trim()) return;
+    if (!supported || !text.trim()) {
+      options.onEnd?.();
+      return;
+    }
 
     const start = () => {
-      window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = options.lang ?? 'pt-BR';
       utterance.rate = options.rate ?? 1;
@@ -33,7 +38,10 @@ export function useSpeechSynthesis() {
       const ptVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith('pt'));
       if (ptVoice) utterance.voice = ptVoice;
 
-      utteranceRef.current = utterance;
+      if (options.onStart) utterance.onstart = options.onStart;
+      utterance.onend = () => options.onEnd?.();
+      utterance.onerror = () => options.onEnd?.();
+
       window.speechSynthesis.speak(utterance);
     };
 
@@ -46,8 +54,7 @@ export function useSpeechSynthesis() {
   }
 
   function cancel() {
-    if (!supported) return;
-    window.speechSynthesis.cancel();
+    if (supported) window.speechSynthesis.cancel();
   }
 
   return { speak, cancel, supported };
