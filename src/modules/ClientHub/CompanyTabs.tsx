@@ -48,47 +48,61 @@ export function CompanyTabs({
   }
 
   return (
-    <div className="relative border-b border-zinc-200 bg-zinc-50 px-6">
-      <nav className="flex gap-6 text-sm">
+    <div className="border-b border-zinc-200 bg-white px-8">
+      <nav className="flex items-center gap-6">
         <TabButton active={activeTab === 'cliente'} onClick={() => onTabChange('cliente')}>
           Cliente
         </TabButton>
         <TabButton active={activeTab === 'contratos'} onClick={() => onTabChange('contratos')}>
           Contratos
         </TabButton>
-        <button
-          type="button"
-          onClick={handleTechClick}
-          className={`-mb-px border-b-2 py-3 font-medium transition-colors ${
-            techOpen
-              ? 'border-zinc-900 text-zinc-900'
-              : 'border-transparent text-zinc-600 hover:text-zinc-900'
-          } ${hasSelectedContract ? '' : 'opacity-60'}`}
-        >
-          Técnico ▾
-        </button>
-      </nav>
 
-      {techOpen && hasSelectedContract && (
-        <div className="absolute right-6 top-full z-10 mt-1 w-56 rounded-md border border-zinc-200 bg-white shadow-md">
-          {TECH_OPTIONS.map((option) => (
-            <button
-              key={option.kind}
-              type="button"
-              onClick={() => handleTechOption(option.kind)}
-              className="block w-full px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
+        <div className="relative">
+          <button
+            type="button"
+            onClick={handleTechClick}
+            aria-expanded={techOpen}
+            className={`-mb-px flex items-center gap-1 border-b-2 py-3 text-sm font-medium transition-colors ${
+              techOpen
+                ? 'border-indigo-600 text-zinc-900'
+                : 'border-transparent text-zinc-600 hover:text-zinc-900'
+            } ${hasSelectedContract ? '' : 'opacity-50'}`}
+          >
+            Técnico
+            <svg
+              aria-hidden="true"
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              fill="none"
+              className="mt-0.5"
             >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      )}
+              <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+          </button>
 
-      {techError && (
-        <div className="absolute right-6 top-full z-10 mt-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 shadow-sm">
-          {techError}
+          {techOpen && hasSelectedContract && (
+            <div className="absolute left-0 top-full z-10 mt-1 w-56 origin-top-left overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-lg animate-dropdown">
+              {TECH_OPTIONS.map((option) => (
+                <button
+                  key={option.kind}
+                  type="button"
+                  onClick={() => handleTechOption(option.kind)}
+                  className="block w-full px-4 py-2.5 text-left text-sm text-zinc-700 transition-colors hover:bg-zinc-50 hover:text-zinc-900"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {techError && (
+            <div className="absolute left-0 top-full z-10 mt-1 w-64 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 shadow-sm animate-dropdown">
+              {techError}
+            </div>
+          )}
         </div>
-      )}
+      </nav>
     </div>
   );
 }
@@ -104,9 +118,9 @@ function TabButton({ children, active, onClick }: TabButtonProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`-mb-px border-b-2 py-3 font-medium transition-colors ${
+      className={`-mb-px border-b-2 py-3 text-sm font-medium transition-colors ${
         active
-          ? 'border-zinc-900 text-zinc-900'
+          ? 'border-indigo-600 text-zinc-900'
           : 'border-transparent text-zinc-600 hover:text-zinc-900'
       }`}
     >

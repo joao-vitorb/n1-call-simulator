@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { generateOsNumber } from '../../../utils/osGenerator';
-import { FormTextarea } from './FormControls';
+import { FormActions, FormCheckbox, FormError, FormTextarea } from './FormControls';
 import type { ScriptResult } from './types';
 
 type ProgramacaoServicosFormProps = {
@@ -24,36 +24,11 @@ export function ProgramacaoServicosForm({ onComplete, onCancel }: ProgramacaoSer
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <label className="flex items-center gap-2 text-sm text-zinc-700">
-        <input
-          type="checkbox"
-          checked={fcr}
-          onChange={(event) => setFcr(event.target.checked)}
-          className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-400"
-        />
-        First call resolution
-      </label>
-
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <FormCheckbox label="First call resolution" checked={fcr} onChange={setFcr} />
       <FormTextarea label="Observação" value={observation} onChange={setObservation} rows={6} />
-
-      {error && <p className="text-xs text-red-600">{error}</p>}
-
-      <div className="flex justify-end gap-2 pt-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-        >
-          Concluir
-        </button>
-      </div>
+      {error && <FormError>{error}</FormError>}
+      <FormActions primaryLabel="Concluir" secondaryLabel="Cancelar" onSecondary={onCancel} />
     </form>
   );
 }

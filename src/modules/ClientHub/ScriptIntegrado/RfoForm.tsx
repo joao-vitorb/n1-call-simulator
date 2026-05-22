@@ -1,6 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { generateOsNumber } from '../../../utils/osGenerator';
-import { FormSelect, FormTextarea } from './FormControls';
+import {
+  FormActions,
+  FormCheckbox,
+  FormError,
+  FormSelect,
+  FormTextarea,
+} from './FormControls';
 import type { ScriptResult } from './types';
 
 const PROBLEM_OPTIONS = [
@@ -58,12 +64,12 @@ export function RfoForm({ onComplete, onCancel }: RfoFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <FormSelect label="Problema" value={problem} options={PROBLEM_OPTIONS} onChange={setProblem} />
       <FormSelect label="Impacto" value={impact} options={IMPACT_OPTIONS} onChange={setImpact} />
 
       <div>
-        <p className="mb-1 text-sm font-medium text-zinc-700">E-mail (até 5)</p>
+        <p className="mb-1.5 text-xs font-medium text-zinc-500">E-mail (até 5)</p>
         <div className="space-y-2">
           {emails.map((email, index) => (
             <div key={index} className="flex gap-2">
@@ -72,13 +78,13 @@ export function RfoForm({ onComplete, onCancel }: RfoFormProps) {
                 value={email}
                 onChange={(event) => updateEmail(index, event.target.value)}
                 placeholder={index === 0 ? 'Obrigatório' : 'Opcional'}
-                className="flex-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-500"
+                className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
               />
               {emails.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeEmail(index)}
-                  className="rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-700 hover:bg-zinc-50"
+                  className="rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-700 transition-colors hover:bg-zinc-50"
                 >
                   Remover
                 </button>
@@ -89,7 +95,7 @@ export function RfoForm({ onComplete, onCancel }: RfoFormProps) {
             <button
               type="button"
               onClick={addEmail}
-              className="text-xs font-medium text-emerald-700 hover:underline"
+              className="text-xs font-medium text-indigo-700 hover:text-indigo-800 hover:underline"
             >
               + Adicionar e-mail
             </button>
@@ -97,15 +103,7 @@ export function RfoForm({ onComplete, onCancel }: RfoFormProps) {
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-zinc-700">
-        <input
-          type="checkbox"
-          checked={fcr}
-          onChange={(event) => setFcr(event.target.checked)}
-          className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-400"
-        />
-        First call resolution
-      </label>
+      <FormCheckbox label="First call resolution" checked={fcr} onChange={setFcr} />
 
       <FormSelect
         label="Acesso liberado"
@@ -116,23 +114,9 @@ export function RfoForm({ onComplete, onCancel }: RfoFormProps) {
 
       <FormTextarea label="Observação" value={observation} onChange={setObservation} rows={5} />
 
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <FormError>{error}</FormError>}
 
-      <div className="flex justify-end gap-2 pt-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-        >
-          Concluir
-        </button>
-      </div>
+      <FormActions primaryLabel="Concluir" secondaryLabel="Cancelar" onSecondary={onCancel} />
     </form>
   );
 }
