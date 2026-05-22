@@ -1,12 +1,29 @@
 import { companies } from '../data/seed';
 import type { Company } from '../types/company';
+import type { Contract } from '../types/contract';
 import type { Protocol } from '../types/protocol';
 
 export type SearchType = 'legalName' | 'cnpj' | 'protocol' | 'circuit';
 
+export type SearchFields = {
+  legalName: string;
+  cnpj: string;
+  protocol: string;
+  circuit: string;
+};
+
+export type CompanySearchProps = {
+  fields: SearchFields;
+  onFieldChange: (field: keyof SearchFields, value: string) => void;
+  onSearch: (type: SearchType, value: string) => void;
+  onClear: () => void;
+  searchError: string | null;
+};
+
 export type SearchHit = {
   company: Company;
   protocol?: Protocol;
+  contract?: Contract;
 };
 
 export function searchCompany(type: SearchType, rawValue: string): SearchHit | null {
@@ -41,11 +58,24 @@ export function searchCompany(type: SearchType, rawValue: string): SearchHit | n
   }
 
   if (type === 'circuit') {
-    const found = companies.find((company) =>
-      company.contracts.some((contract) => contract.circuit === value),
-    );
-    return found ? { company: found } : null;
+    for (const company of companies) {
+      const contract = company.contracts.find((item) => item.circuit === value);
+      if (contract) {
+        return { company, contract };
+      }
+    }
+    return null;
   }
 
   return null;
+}
+
+export function searchCompaniesByName(rawValue: string): Company[] {
+  const needle = rawValue.trim().toLowerCase();
+  if (!needle) return [];
+  return companies.filter((company) => company.legalName.toLowerCase().includes(needle));
+}
+
+export function isCompanyActive(company: Company): boolean {
+  return company.contracts.some((contract) => contract.status === 'Ativo');
 }

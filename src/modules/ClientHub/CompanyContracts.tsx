@@ -1,6 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Company } from '../../types/company';
 import type { Contract } from '../../types/contract';
+
+const PER_PAGE = 10;
+const MAX_PAGES = 20;
 
 type CompanyContractsProps = {
   company: Company;
@@ -17,6 +20,9 @@ export function CompanyContracts({
   const [addressFilter, setAddressFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [applied, setApplied] = useState({ circuit: '', address: '', status: '' });
+  const [page, setPage] = useState(1);
+
+  const hasActiveFilter = Boolean(applied.circuit || applied.address || applied.status);
 
   const filtered = useMemo(() => {
     return company.contracts.filter((contract) => {
@@ -31,8 +37,19 @@ export function CompanyContracts({
     });
   }, [company.contracts, applied]);
 
+  const cappedTotal = hasActiveFilter ? filtered.length : Math.min(filtered.length, PER_PAGE * MAX_PAGES);
+  const totalPages = Math.max(1, Math.ceil(cappedTotal / PER_PAGE));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = filtered.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
+  const overLimit = !hasActiveFilter && filtered.length > PER_PAGE * MAX_PAGES;
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
   function applyFilters() {
     setApplied({ circuit: circuitFilter, address: addressFilter, status: statusFilter });
+    setPage(1);
   }
 
   function clearFilters() {
@@ -40,6 +57,7 @@ export function CompanyContracts({
     setAddressFilter('');
     setStatusFilter('');
     setApplied({ circuit: '', address: '', status: '' });
+    setPage(1);
   }
 
   return (
@@ -74,6 +92,13 @@ export function CompanyContracts({
         </div>
       </section>
 
+      {overLimit && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Exibindo os primeiros {PER_PAGE * MAX_PAGES} contratos. Use os filtros de circuito ou
+          endereço para localizar os demais.
+        </div>
+      )}
+
       <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
         <table className="w-full">
           <thead>
@@ -86,14 +111,14 @@ export function CompanyContracts({
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && (
+            {pageItems.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-6 py-6 text-center text-sm text-zinc-500">
                   Nenhum contrato encontrado.
                 </td>
               </tr>
             )}
-            {filtered.map((contract) => {
+            {pageItems.map((contract) => {
               const isSelected = selectedContract?.id === contract.id;
               return (
                 <tr
@@ -122,6 +147,32 @@ export function CompanyContracts({
             })}
           </tbody>
         </table>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-3 text-sm">
+            <span className="text-zinc-500">
+              Página {safePage} de {totalPages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+                className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
+                className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Próxima
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {selectedContract && (

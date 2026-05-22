@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import clientHubLogo from '../../assets/logos/client-hub.svg';
 import { CompanySearchCard } from './CompanySearchCard';
 import { ProtocolPanel } from './ProtocolPanel';
@@ -11,26 +11,38 @@ import { TechFormModal, type TechFormKind } from './ScriptIntegrado/TechFormModa
 import type { Company } from '../../types/company';
 import type { Protocol } from '../../types/protocol';
 import type { Contract } from '../../types/contract';
-import type { SearchType } from '../../utils/search';
+import type { CompanySearchProps } from '../../utils/search';
 
-type ClientHubCompanyProps = {
+type ClientHubCompanyProps = CompanySearchProps & {
   company: Company;
   contextProtocol: Protocol | null;
-  onSearch: (type: SearchType, value: string) => void;
-  onClear?: () => void;
-  searchError: string | null;
+  initialTab: CompanyTabId;
+  initialContractId: string | null;
 };
 
 export function ClientHubCompany({
   company,
   contextProtocol,
-  onSearch,
-  onClear,
-  searchError,
+  initialTab,
+  initialContractId,
+  ...searchProps
 }: ClientHubCompanyProps) {
-  const [activeTab, setActiveTab] = useState<CompanyTabId>('cliente');
-  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [activeTab, setActiveTab] = useState<CompanyTabId>(initialTab);
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(
+    initialContractId
+      ? company.contracts.find((contract) => contract.id === initialContractId) ?? null
+      : null,
+  );
   const [openTechForm, setOpenTechForm] = useState<TechFormKind | null>(null);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+    setSelectedContract(
+      initialContractId
+        ? company.contracts.find((contract) => contract.id === initialContractId) ?? null
+        : null,
+    );
+  }, [company.id, initialTab, initialContractId, company.contracts]);
 
   return (
     <section className="flex flex-1 bg-zinc-50">
@@ -40,7 +52,7 @@ export function ClientHubCompany({
             <img src={clientHubLogo} alt="Client Hub" className="h-40 w-40 ml-5" />
           </span>
         </div>
-        <CompanySearchCard onSearch={onSearch} onClear={onClear} searchError={searchError} />
+        <CompanySearchCard {...searchProps} />
         <ProtocolPanel contextProtocol={contextProtocol} />
         <InteractionPanel />
       </aside>
