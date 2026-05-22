@@ -51,52 +51,54 @@ export function CompanySearchCard({ onSearch, onClear, searchError }: CompanySea
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-xl border border-zinc-200 bg-white p-4 text-sm shadow-sm"
+      className="rounded-xl border border-zinc-200 bg-white p-6"
     >
-      <p className="mb-3 font-medium text-zinc-700">Buscar empresa</p>
-      <div className="flex flex-col gap-2">
-        <Field label="Razão social" value={legalName} onChange={setLegalName} />
-        <Field label="CNPJ" value={cnpj} onChange={setCnpj} />
-        <Field label="Protocolo" value={protocol} onChange={setProtocol} />
-        <Field label="Circuito" value={circuit} onChange={setCircuit} />
+      <div className="space-y-4">
+        <SearchField label="Razão social" value={legalName} onChange={setLegalName} />
+        <SearchField label="CNPJ" value={cnpj} onChange={setCnpj} mono />
+        <SearchField label="Protocolo" value={protocol} onChange={setProtocol} mono />
+        <SearchField label="Circuito" value={circuit} onChange={setCircuit} mono />
       </div>
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-6 flex items-center gap-2">
         <button
           type="submit"
-          className="flex-1 rounded-md bg-zinc-900 px-4 py-2 font-medium text-white transition-colors hover:bg-zinc-800"
+          className="flex-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
         >
           Buscar
         </button>
         <button
           type="button"
           onClick={handleClear}
-          className="flex-1 rounded-md border border-zinc-300 bg-white px-4 py-2 font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+          className="flex-1 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
         >
           Limpar
         </button>
       </div>
 
-      {displayedError && <p className="mt-2 text-xs text-red-600">{displayedError}</p>}
+      {displayedError && <p className="mt-4 text-sm text-red-600">{displayedError}</p>}
     </form>
   );
 }
 
-type FieldProps = {
+type SearchFieldProps = {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  mono?: boolean;
 };
 
-function Field({ label, value, onChange }: FieldProps) {
+function SearchField({ label, value, onChange, mono }: SearchFieldProps) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs text-zinc-500">{label}</span>
+      <span className="mb-1.5 block text-xs font-medium text-zinc-500">{label}</span>
       <input
         type="text"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 outline-none focus:border-zinc-500"
+        className={`w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 ${
+          mono ? 'font-mono' : ''
+        }`}
       />
     </label>
   );

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import clientHubLogo from '../../assets/logos/client-hub.svg';
 import { CompanySearchCard } from './CompanySearchCard';
 import { ProtocolPanel } from './ProtocolPanel';
 import { InteractionPanel } from './InteractionPanel';
@@ -32,8 +33,13 @@ export function ClientHubCompany({
   const [openTechForm, setOpenTechForm] = useState<TechFormKind | null>(null);
 
   return (
-    <section className="flex flex-1">
-      <aside className="flex w-80 shrink-0 flex-col gap-4 overflow-y-auto border-r border-zinc-200 bg-zinc-50 p-4">
+    <section className="flex flex-1 bg-zinc-50">
+      <aside className="flex w-[340px] shrink-0 flex-col gap-4 overflow-y-auto border-r border-zinc-200 bg-white p-5">
+        <div>
+          <span className="flex w-53 h-22 items-center rounded-xl bg-indigo-600">
+            <img src={clientHubLogo} alt="Client Hub" className="h-40 w-40 ml-5" />
+          </span>
+        </div>
         <CompanySearchCard onSearch={onSearch} onClear={onClear} searchError={searchError} />
         <ProtocolPanel contextProtocol={contextProtocol} />
         <InteractionPanel />
@@ -47,7 +53,7 @@ export function ClientHubCompany({
           hasSelectedContract={selectedContract !== null}
           onOpenTechForm={setOpenTechForm}
         />
-        <div className="flex-1 bg-zinc-50 p-6">
+        <div className="flex-1 px-8 py-6">
           {activeTab === 'cliente' && <CompanyClient company={company} />}
           {activeTab === 'contratos' && (
             <CompanyContracts
