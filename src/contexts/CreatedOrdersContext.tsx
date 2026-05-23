@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
+import { usePersistedState } from '../hooks/usePersistedState';
 import type { ServiceOrder } from '../types/serviceOrder';
 
 type CreatedOrdersValue = {
@@ -9,7 +10,10 @@ type CreatedOrdersValue = {
 const CreatedOrdersContext = createContext<CreatedOrdersValue | undefined>(undefined);
 
 export function CreatedOrdersProvider({ children }: { children: ReactNode }) {
-  const [createdOrders, setCreatedOrders] = useState<ServiceOrder[]>([]);
+  const [createdOrders, setCreatedOrders] = usePersistedState<ServiceOrder[]>(
+    'n1_created_orders',
+    [],
+  );
 
   function registerOrder(order: ServiceOrder) {
     setCreatedOrders((prev) => [order, ...prev]);
