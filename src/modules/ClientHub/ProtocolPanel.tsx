@@ -1,17 +1,25 @@
 import { useEffect, useState } from 'react';
 import { generateProtocol } from '../../utils/protocolGenerator';
+import { useAuth } from '../../contexts/AuthContext';
 import { useTrainingSession } from '../../contexts/TrainingSessionContext';
-import type { Protocol } from '../../types/protocol';
+import { useClientHubData } from '../../contexts/ClientHubDataContext';
+import type { Company } from '../../types/company';
+import type { ProtocolContext } from '../../utils/protocols';
 
 const PREFERENCE_OPTIONS = ['Email', 'Telefone', 'SMS', 'Email/Telefone', 'Prefere não ser contatado'];
 const DELIVERY_OPTIONS = ['Telefone', 'SMS', 'Email/Telefone', 'Prefere não receber'];
 
 type ProtocolPanelProps = {
-  contextProtocol: Protocol | null;
+  company: Company;
+  protocolContext: ProtocolContext | null;
+  onProtocolGenerated: (protocolNumber: string) => void;
 };
 
-export function ProtocolPanel({ contextProtocol }: ProtocolPanelProps) {
+export function ProtocolPanel({ company, protocolContext, onProtocolGenerated }: ProtocolPanelProps) {
+  const { currentUser } = useAuth();
   const { activeCall, updateCallForm } = useTrainingSession();
+  const { registerProtocol } = useClientHubData();
+
   const [ddd1, setDdd1] = useState('');
   const [phone1, setPhone1] = useState('');
   const [ddd2, setDdd2] = useState('');
@@ -22,20 +30,22 @@ export function ProtocolPanel({ contextProtocol }: ProtocolPanelProps) {
   const [contactPreference, setContactPreference] = useState('');
   const [deliveryMethod, setDeliveryMethod] = useState('');
   const [protocolNumber, setProtocolNumber] = useState('');
+  const [generatedBy, setGeneratedBy] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (contextProtocol) {
-      setDdd1(contextProtocol.phone1.ddd);
-      setPhone1(contextProtocol.phone1.number);
-      setDdd2(contextProtocol.phone2?.ddd ?? '');
-      setPhone2(contextProtocol.phone2?.number ?? '');
-      setCustomerName(contextProtocol.customerName);
-      setObservation(contextProtocol.observation);
-      setEmail(contextProtocol.email);
-      setContactPreference(contextProtocol.contactPreference);
-      setDeliveryMethod(contextProtocol.deliveryMethod);
-      setProtocolNumber(contextProtocol.protocol);
+    if (protocolContext) {
+      setDdd1(protocolContext.ddd1);
+      setPhone1(protocolContext.phone1);
+      setDdd2(protocolContext.ddd2);
+      setPhone2(protocolContext.phone2);
+      setCustomerName(protocolContext.customerName);
+      setObservation(protocolContext.observation);
+      setEmail(protocolContext.email);
+      setContactPreference(protocolContext.contactPreference);
+      setDeliveryMethod(protocolContext.deliveryMethod);
+      setProtocolNumber(protocolContext.protocol);
+      setGeneratedBy(protocolContext.generatedBy);
     } else {
       setDdd1('');
       setPhone1('');
@@ -47,9 +57,10 @@ export function ProtocolPanel({ contextProtocol }: ProtocolPanelProps) {
       setContactPreference('');
       setDeliveryMethod('');
       setProtocolNumber('');
+      setGeneratedBy('');
     }
     setError(null);
-  }, [contextProtocol]);
+  }, [protocolContext]);
 
   function handleGenerate() {
     if (!phone1.trim()) {
@@ -61,56 +72,85 @@ export function ProtocolPanel({ contextProtocol }: ProtocolPanelProps) {
       return;
     }
     setError(null);
+
     const newProtocol = generateProtocol();
+    const author = currentUser?.username ?? 'desconhecido';
+
+    registerProtocol({
+      protocol: newProtocol,
+      companyId: company.id,
+      generatedBy: author,
+      generatedAt: new Date().toISOString(),
+      customerName,
+      ddd1,
+      phone1,
+      ddd2,
+      phone2,
+      email,
+      contactPreference,
+      deliveryMethod,
+      observation,
+    });
+
     setProtocolNumber(newProtocol);
+    setGeneratedBy(author);
+
     if (activeCall && !activeCall.saved) {
       updateCallForm(activeCall.id, { protocol: newProtocol });
     }
+
+    onProtocolGenerated(newProtocol);
   }
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-5">
-      <h3 className="text-sm font-semibold text-zinc-900">Dados do protocolo</h3>
+      <h3 className="mb-4 text-sm font-semibold text-zinc-900">Dados do protocolo</h3>
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <Field label="DDD" value={ddd1} onChange={setDdd1} mono />
+      <div className="grid grid-cols-3 gap-2">
+        <PanelField label="DDD" value={ddd1} onChange={setDdd1} mono />
         <div className="col-span-2">
-          <Field label="Telefone 1" value={phone1} onChange={setPhone1} mono />
+          <PanelField label="Telefone 1" value={phone1} onChange={setPhone1} mono />
         </div>
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2">
-        <Field label="DDD" value={ddd2} onChange={setDdd2} mono />
+        <PanelField label="DDD" value={ddd2} onChange={setDdd2} mono />
         <div className="col-span-2">
-          <Field label="Telefone 2" value={phone2} onChange={setPhone2} mono />
+          <PanelField label="Telefone 2" value={phone2} onChange={setPhone2} mono />
         </div>
       </div>
       <div className="mt-3 space-y-3">
-        <Field label="Nome do cliente" value={customerName} onChange={setCustomerName} />
-        <Field label="Observação" value={observation} onChange={setObservation} />
-        <Field label="E-mail" value={email} onChange={setEmail} />
-        <Select
+        <PanelField label="Nome do cliente" value={customerName} onChange={setCustomerName} />
+        <PanelField label="Observação" value={observation} onChange={setObservation} />
+        <PanelField label="E-mail" value={email} onChange={setEmail} />
+        <PanelSelect
           label="Preferência de contato"
           value={contactPreference}
           options={PREFERENCE_OPTIONS}
           onChange={setContactPreference}
         />
-        <Select
+        <PanelSelect
           label="Meio de envio"
           value={deliveryMethod}
           options={DELIVERY_OPTIONS}
           onChange={setDeliveryMethod}
         />
-        <div>
-          <p className="mb-1 text-xs font-medium text-zinc-500">Protocolo gerado</p>
-          {protocolNumber ? (
-            <p className="font-mono text-sm text-zinc-900">{protocolNumber}</p>
-          ) : (
-            <p className="text-sm text-zinc-400">—</p>
-          )}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <p className="mb-1 text-xs font-medium text-zinc-500">Protocolo gerado</p>
+            <p className="font-mono text-sm text-zinc-900">
+              {protocolNumber || <span className="text-zinc-300">—</span>}
+            </p>
+          </div>
+          <div>
+            <p className="mb-1 text-xs font-medium text-zinc-500">Gerado por</p>
+            <p className="text-sm text-zinc-900">
+              {generatedBy || <span className="text-zinc-300">—</span>}
+            </p>
+          </div>
         </div>
       </div>
 
-      {error && <p className="mt-3 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
       <button
         type="button"
@@ -123,14 +163,14 @@ export function ProtocolPanel({ contextProtocol }: ProtocolPanelProps) {
   );
 }
 
-type FieldProps = {
+type PanelFieldProps = {
   label: string;
   value: string;
   onChange: (value: string) => void;
   mono?: boolean;
 };
 
-function Field({ label, value, onChange, mono }: FieldProps) {
+function PanelField({ label, value, onChange, mono }: PanelFieldProps) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-zinc-500">{label}</span>
@@ -146,14 +186,14 @@ function Field({ label, value, onChange, mono }: FieldProps) {
   );
 }
 
-type SelectProps = {
+type PanelSelectProps = {
   label: string;
   value: string;
   options: string[];
   onChange: (value: string) => void;
 };
 
-function Select({ label, value, options, onChange }: SelectProps) {
+function PanelSelect({ label, value, options, onChange }: PanelSelectProps) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-zinc-500">{label}</span>

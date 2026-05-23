@@ -8,11 +8,17 @@ import {
   type SearchFields,
   type SearchType,
 } from '../../utils/search';
+import {
+  resolveProtocolContext,
+  parseCustomerPhone,
+  TRAINING_CALL_AUTHOR,
+  type ProtocolContext,
+} from '../../utils/protocols';
 import { findCompanyById } from '../../utils/companies';
 import { useTrainingSession } from '../../contexts/TrainingSessionContext';
+import { useClientHubData } from '../../contexts/ClientHubDataContext';
 import { usePersistedState } from '../../hooks/usePersistedState';
 import type { Company } from '../../types/company';
-import type { Protocol } from '../../types/protocol';
 import type { CompanyTabId } from './CompanyTabs';
 
 const EMPTY_FIELDS: SearchFields = { legalName: '', cnpj: '', protocol: '', circuit: '' };
@@ -24,6 +30,7 @@ type CompanyView = {
 
 export function ClientHub() {
   const { activeCall } = useTrainingSession();
+  const { generatedProtocols } = useClientHubData();
   const [selectedCompanyId, setSelectedCompanyId] = usePersistedState<string | null>(
     'n1_client_hub_company_id',
     null,
@@ -41,10 +48,43 @@ export function ClientHub() {
   const [searchError, setSearchError] = useState<string | null>(null);
 
   const selectedCompany = selectedCompanyId ? findCompanyById(selectedCompanyId) : null;
-  const contextProtocol: Protocol | null =
-    contextProtocolNumber && selectedCompany
-      ? selectedCompany.protocols.find((p) => p.protocol === contextProtocolNumber) ?? null
-      : null;
+
+  let protocolContext: ProtocolContext | null = null;
+  if (contextProtocolNumber && selectedCompany) {
+    if (activeCall && activeCall.formState.protocol === contextProtocolNumber) {
+      const phone = parseCustomerPhone(activeCall.scenario.customerPhone);
+      protocolContext = {
+        protocol: contextProtocolNumber,
+        generatedBy: TRAINING_CALL_AUTHOR,
+        customerName: activeCall.scenario.contactName,
+        ddd1: phone.ddd,
+        phone1: phone.number,
+        ddd2: '',
+        phone2: '',
+        email: '',
+        contactPreference: '',
+        deliveryMethod: '',
+        observation: '',
+      };
+    } else {
+      protocolContext = resolveProtocolContext(
+        contextProtocolNumber,
+        selectedCompany,
+        generatedProtocols,
+      );
+    }
+  }
+
+  function openCompany(
+    companyId: string,
+    options: { protocol: string | null; view: CompanyView },
+  ) {
+    setSearchError(null);
+    setNameResults(null);
+    setSelectedCompanyId(companyId);
+    setContextProtocolNumber(options.protocol);
+    setCompanyView(options.view);
+  }
 
   function handleFieldChange(field: keyof SearchFields, value: string) {
     setSearchFields({ ...EMPTY_FIELDS, [field]: value });
@@ -56,11 +96,7 @@ export function ClientHub() {
     if (type === 'protocol' && activeCall && activeCall.formState.protocol === trimmed) {
       const company = findCompanyById(activeCall.scenario.companyId);
       if (company) {
-        setSearchError(null);
-        setNameResults(null);
-        setSelectedCompanyId(company.id);
-        setContextProtocolNumber(null);
-        setCompanyView({ tab: 'cliente', contractId: null });
+        openCompany(company.id, { protocol: trimmed, view: { tab: 'cliente', contractId: null } });
         return;
       }
     }
@@ -83,11 +119,35 @@ export function ClientHub() {
         setSearchError('Nenhum resultado encontrado.');
         return;
       }
-      setSearchError(null);
-      setNameResults(null);
-      setSelectedCompanyId(hit.company.id);
-      setContextProtocolNumber(null);
-      setCompanyView({ tab: 'contratos', contractId: hit.contract?.id ?? null });
+      openCompany(hit.company.id, {
+        protocol: null,
+        view: { tab: 'contratos', contractId: hit.contract?.id ?? null },
+      });
+      return;
+    }
+
+    if (type === 'protocol') {
+      const seedHit = searchCompany('protocol', trimmed);
+      if (seedHit?.protocol) {
+        openCompany(seedHit.company.id, {
+          protocol: seedHit.protocol.protocol,
+          view: { tab: 'cliente', contractId: null },
+        });
+        return;
+      }
+      const cleaned = trimmed.replace(/\D/g, '');
+      const generated = generatedProtocols.find((item) => item.protocol === cleaned);
+      if (generated) {
+        const company = findCompanyById(generated.companyId);
+        if (company) {
+          openCompany(company.id, {
+            protocol: generated.protocol,
+            view: { tab: 'cliente', contractId: null },
+          });
+          return;
+        }
+      }
+      setSearchError('Nenhum resultado encontrado.');
       return;
     }
 
@@ -96,11 +156,7 @@ export function ClientHub() {
       setSearchError('Nenhum resultado encontrado.');
       return;
     }
-    setSearchError(null);
-    setNameResults(null);
-    setSelectedCompanyId(result.company.id);
-    setContextProtocolNumber(result.protocol?.protocol ?? null);
-    setCompanyView({ tab: 'cliente', contractId: null });
+    openCompany(result.company.id, { protocol: null, view: { tab: 'cliente', contractId: null } });
   }
 
   function handleClearSearch() {
@@ -112,10 +168,11 @@ export function ClientHub() {
   }
 
   function handleSelectCompany(company: Company) {
-    setSelectedCompanyId(company.id);
-    setNameResults(null);
-    setContextProtocolNumber(null);
-    setCompanyView({ tab: 'cliente', contractId: null });
+    openCompany(company.id, { protocol: null, view: { tab: 'cliente', contractId: null } });
+  }
+
+  function handleProtocolGenerated(protocolNumber: string) {
+    setContextProtocolNumber(protocolNumber);
   }
 
   const searchProps = {
@@ -130,9 +187,11 @@ export function ClientHub() {
     return (
       <ClientHubCompany
         company={selectedCompany}
-        contextProtocol={contextProtocol}
+        protocolContext={protocolContext}
         initialTab={companyView.tab}
         initialContractId={companyView.contractId}
+        onProtocolGenerated={handleProtocolGenerated}
+        onFinalizeInteraction={handleClearSearch}
         {...searchProps}
       />
     );
