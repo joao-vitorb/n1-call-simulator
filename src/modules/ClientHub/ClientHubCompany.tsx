@@ -9,22 +9,26 @@ import { CompanyClient } from './CompanyClient';
 import { CompanyContracts } from './CompanyContracts';
 import { TechFormModal, type TechFormKind } from './ScriptIntegrado/TechFormModal';
 import type { Company } from '../../types/company';
-import type { Protocol } from '../../types/protocol';
 import type { Contract } from '../../types/contract';
 import type { CompanySearchProps } from '../../utils/search';
+import type { ProtocolContext } from '../../utils/protocols';
 
 type ClientHubCompanyProps = CompanySearchProps & {
   company: Company;
-  contextProtocol: Protocol | null;
+  protocolContext: ProtocolContext | null;
   initialTab: CompanyTabId;
   initialContractId: string | null;
+  onProtocolGenerated: (protocolNumber: string) => void;
+  onFinalizeInteraction: () => void;
 };
 
 export function ClientHubCompany({
   company,
-  contextProtocol,
+  protocolContext,
   initialTab,
   initialContractId,
+  onProtocolGenerated,
+  onFinalizeInteraction,
   ...searchProps
 }: ClientHubCompanyProps) {
   const [activeTab, setActiveTab] = useState<CompanyTabId>(initialTab);
@@ -53,8 +57,18 @@ export function ClientHubCompany({
           </span>
         </div>
         <CompanySearchCard {...searchProps} />
-        <ProtocolPanel contextProtocol={contextProtocol} />
-        <InteractionPanel />
+        <ProtocolPanel
+          company={company}
+          protocolContext={protocolContext}
+          onProtocolGenerated={onProtocolGenerated}
+        />
+        {protocolContext && (
+          <InteractionPanel
+            company={company}
+            protocolContext={protocolContext}
+            onFinalize={onFinalizeInteraction}
+          />
+        )}
       </aside>
 
       <div className="flex flex-1 flex-col overflow-y-auto">
