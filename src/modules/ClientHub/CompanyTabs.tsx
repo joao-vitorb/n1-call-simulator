@@ -1,13 +1,18 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { TechFormKind } from './ScriptIntegrado/TechFormModal';
 
-export type CompanyTabId = 'cliente' | 'contratos';
+export type CompanyTabId = 'cliente' | 'contratos' | 'historico-interacoes' | 'historico-scripts';
 
 const TECH_OPTIONS: { kind: TechFormKind; label: string }[] = [
   { kind: 'script-integrado', label: 'Script integrado' },
   { kind: 'visita-tecnica', label: 'Visita técnica' },
   { kind: 'rfo', label: 'RFO' },
   { kind: 'programacao-servicos', label: 'Programação de serviço' },
+];
+
+const HISTORY_OPTIONS: { tab: CompanyTabId; label: string }[] = [
+  { tab: 'historico-interacoes', label: 'Histórico de interações' },
+  { tab: 'historico-scripts', label: 'Histórico script integrado' },
 ];
 
 type CompanyTabsProps = {
@@ -24,6 +29,7 @@ export function CompanyTabs({
   onOpenTechForm,
 }: CompanyTabsProps) {
   const [techOpen, setTechOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [techError, setTechError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,6 +39,7 @@ export function CompanyTabs({
   }, [techError]);
 
   function handleTechClick() {
+    setHistoryOpen(false);
     if (!hasSelectedContract) {
       setTechError('Selecione um contrato antes de acessar o menu Técnico.');
       setTechOpen(false);
@@ -46,6 +53,13 @@ export function CompanyTabs({
     setTechOpen(false);
     onOpenTechForm(kind);
   }
+
+  function handleHistoryOption(tab: CompanyTabId) {
+    setHistoryOpen(false);
+    onTabChange(tab);
+  }
+
+  const historyActive = activeTab === 'historico-interacoes' || activeTab === 'historico-scripts';
 
   return (
     <div className="border-b border-zinc-200 bg-white px-8">
@@ -69,16 +83,7 @@ export function CompanyTabs({
             } ${hasSelectedContract ? '' : 'opacity-50'}`}
           >
             Técnico
-            <svg
-              aria-hidden="true"
-              width="10"
-              height="10"
-              viewBox="0 0 10 10"
-              fill="none"
-              className="mt-0.5"
-            >
-              <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" />
-            </svg>
+            <Chevron />
           </button>
 
           {techOpen && hasSelectedContract && (
@@ -102,8 +107,50 @@ export function CompanyTabs({
             </div>
           )}
         </div>
+
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => {
+              setTechOpen(false);
+              setHistoryOpen((open) => !open);
+            }}
+            aria-expanded={historyOpen}
+            className={`-mb-px flex items-center gap-1 border-b-2 py-3 text-sm font-medium transition-colors ${
+              historyOpen || historyActive
+                ? 'border-indigo-600 text-zinc-900'
+                : 'border-transparent text-zinc-600 hover:text-zinc-900'
+            }`}
+          >
+            Históricos
+            <Chevron />
+          </button>
+
+          {historyOpen && (
+            <div className="absolute left-0 top-full z-10 mt-1 w-60 origin-top-left overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-lg animate-dropdown">
+              {HISTORY_OPTIONS.map((option) => (
+                <button
+                  key={option.tab}
+                  type="button"
+                  onClick={() => handleHistoryOption(option.tab)}
+                  className="block w-full px-4 py-2.5 text-left text-sm text-zinc-700 transition-colors hover:bg-zinc-50 hover:text-zinc-900"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </nav>
     </div>
+  );
+}
+
+function Chevron() {
+  return (
+    <svg aria-hidden="true" width="10" height="10" viewBox="0 0 10 10" fill="none" className="mt-0.5">
+      <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
   );
 }
 

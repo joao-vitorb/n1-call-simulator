@@ -3,11 +3,22 @@ const FORMATTER = new Intl.DateTimeFormat('pt-BR', {
   timeStyle: 'short',
 });
 
+const DATE_FORMATTER = new Intl.DateTimeFormat('pt-BR', {
+  dateStyle: 'short',
+});
+
 export function formatDateTime(iso: string | null): string {
   if (!iso) return '—';
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
   return FORMATTER.format(date);
+}
+
+export function formatDate(iso: string | null): string {
+  if (!iso) return '—';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return DATE_FORMATTER.format(date);
 }
 
 export type SlaRemaining = {

@@ -7,6 +7,8 @@ import { CompanyHeader } from './CompanyHeader';
 import { CompanyTabs, type CompanyTabId } from './CompanyTabs';
 import { CompanyClient } from './CompanyClient';
 import { CompanyContracts } from './CompanyContracts';
+import { CompanyInteractionsHistory } from './CompanyInteractionsHistory';
+import { CompanyScriptsHistory } from './CompanyScriptsHistory';
 import { TechFormModal, type TechFormKind } from './ScriptIntegrado/TechFormModal';
 import type { Company } from '../../types/company';
 import type { Contract } from '../../types/contract';
@@ -88,6 +90,8 @@ export function ClientHubCompany({
               onSelectContract={setSelectedContract}
             />
           )}
+          {activeTab === 'historico-interacoes' && <CompanyInteractionsHistory company={company} />}
+          {activeTab === 'historico-scripts' && <CompanyScriptsHistory company={company} />}
         </div>
       </div>
 

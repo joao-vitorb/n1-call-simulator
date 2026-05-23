@@ -13,13 +13,13 @@ function App() {
   }
 
   return (
-    <TrainingSessionProvider>
-      <CreatedOrdersProvider>
-        <ClientHubDataProvider>
+    <ClientHubDataProvider>
+      <TrainingSessionProvider>
+        <CreatedOrdersProvider>
           <BrowserShell />
-        </ClientHubDataProvider>
-      </CreatedOrdersProvider>
-    </TrainingSessionProvider>
+        </CreatedOrdersProvider>
+      </TrainingSessionProvider>
+    </ClientHubDataProvider>
   );
 }
 

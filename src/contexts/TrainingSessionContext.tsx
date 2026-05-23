@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { findCompanyById, findContractByNumber } from '../utils/companies';
 import { generateProtocol } from '../utils/protocolGenerator';
+import { parseCustomerPhone, TRAINING_CALL_AUTHOR } from '../utils/protocols';
+import { useClientHubData } from './ClientHubDataContext';
 import type { CallEntry, CallFormState } from '../types/trainingCall';
 import type { Scenario } from '../types/scenario';
 import type { ConversationMessage } from '../services/conversationProvider';
@@ -42,6 +44,7 @@ type TrainingSessionValue = {
 const TrainingSessionContext = createContext<TrainingSessionValue | undefined>(undefined);
 
 export function TrainingSessionProvider({ children }: { children: ReactNode }) {
+  const { registerProtocol } = useClientHubData();
   const [onlineSince] = useState(() => new Date().toISOString());
   const [activeCall, setActiveCall] = useState<CallEntry | null>(null);
   const [finishedCalls, setFinishedCalls] = useState<CallEntry[]>([]);
@@ -49,6 +52,25 @@ export function TrainingSessionProvider({ children }: { children: ReactNode }) {
 
   function receiveCall(scenario: Scenario) {
     const startedAt = new Date().toISOString();
+    const formState = buildInitialFormState(scenario);
+    const phone = parseCustomerPhone(scenario.customerPhone);
+
+    registerProtocol({
+      protocol: formState.protocol,
+      companyId: scenario.companyId,
+      generatedBy: TRAINING_CALL_AUTHOR,
+      generatedAt: startedAt,
+      customerName: scenario.contactName,
+      ddd1: phone.ddd,
+      phone1: phone.number,
+      ddd2: '',
+      phone2: '',
+      email: '',
+      contactPreference: '',
+      deliveryMethod: '',
+      observation: '',
+    });
+
     const openingMessage: ConversationMessage = {
       role: 'customer',
       text: scenario.openingLine,
@@ -61,7 +83,7 @@ export function TrainingSessionProvider({ children }: { children: ReactNode }) {
       startedAt,
       finishedAt: null,
       durationSeconds: null,
-      formState: buildInitialFormState(scenario),
+      formState,
       saved: false,
       messages: [openingMessage],
     };

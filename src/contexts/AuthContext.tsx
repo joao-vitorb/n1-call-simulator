@@ -3,6 +3,12 @@ import type { User } from '../types/user';
 
 const STORAGE_KEY = 'n1_current_user';
 
+const PERSISTENT_KEYS = [
+  'n1_client_hub_generated_protocols',
+  'n1_client_hub_interactions',
+  'n1_created_orders',
+];
+
 type AuthContextValue = {
   currentUser: User | null;
   login: (username: string) => void;
@@ -25,7 +31,12 @@ function clearOtherSessionState() {
   const keysToRemove: string[] = [];
   for (let i = 0; i < localStorage.length; i += 1) {
     const key = localStorage.key(i);
-    if (key && key.startsWith('n1_') && key !== STORAGE_KEY) {
+    if (
+      key &&
+      key.startsWith('n1_') &&
+      key !== STORAGE_KEY &&
+      !PERSISTENT_KEYS.includes(key)
+    ) {
       keysToRemove.push(key);
     }
   }
