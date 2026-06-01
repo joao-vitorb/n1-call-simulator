@@ -1,23 +1,14 @@
 import { useEffect, useState } from 'react';
 
 export function useElapsedTime(startedAt: string | null): number {
-  const [seconds, setSeconds] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    if (!startedAt) {
-      setSeconds(0);
-      return;
-    }
-
-    const tick = () => {
-      const elapsed = Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000);
-      setSeconds(elapsed);
-    };
-
-    tick();
-    const id = window.setInterval(tick, 1000);
+    if (!startedAt) return;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, [startedAt]);
 
-  return seconds;
+  if (!startedAt) return 0;
+  return Math.max(0, Math.floor((now - new Date(startedAt).getTime()) / 1000));
 }
