@@ -34,7 +34,7 @@ export function TrainingCall() {
     viewingCallId,
     receiveCall,
     hangUp,
-    selectFinishedCall,
+    selectCall,
     updateCallForm,
     saveCall,
     appendMessage,
@@ -48,7 +48,9 @@ export function TrainingCall() {
   const [asrError, setAsrError] = useState<string | null>(null);
 
   const viewingCall =
-    activeCall ?? finishedCalls.find((call) => call.id === viewingCallId) ?? null;
+    [activeCall, ...finishedCalls].find((call) => call?.id === viewingCallId) ??
+    activeCall ??
+    null;
 
   const { supported: asrSupported } = useSpeechRecognition({
     active: !!activeCall && !muted && !ttsActive && !aiBusy,
@@ -133,12 +135,12 @@ export function TrainingCall() {
       <CallSidebar
         onlineSeconds={onlineSeconds}
         callsCount={finishedCalls.length}
+        activeCall={activeCall}
         finishedCalls={finishedCalls}
         selectedId={viewingCallId}
-        disabled={activeCall !== null}
-        onSelectCall={selectFinishedCall}
+        onSelectCall={selectCall}
       />
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto bg-zinc-50 p-6">
         <CallStage
           activeCall={activeCall}
           muted={muted}
@@ -165,7 +167,7 @@ export function TrainingCall() {
 
 function EmptyForm() {
   return (
-    <div className="flex flex-1 items-center justify-center bg-white p-8">
+    <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-white p-12">
       <p className="max-w-sm text-center text-sm text-zinc-500">
         Receba uma ligação ou selecione um atendimento do histórico para visualizar o
         formulário.

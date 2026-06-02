@@ -35,7 +35,7 @@ type TrainingSessionValue = {
   viewingCallId: string | null;
   receiveCall: (scenario: Scenario) => void;
   hangUp: () => void;
-  selectFinishedCall: (id: string | null) => void;
+  selectCall: (id: string | null) => void;
   updateCallForm: (id: string, updates: Partial<CallFormState>) => void;
   saveCall: (id: string) => void;
   appendMessage: (id: string, message: ConversationMessage) => void;
@@ -88,7 +88,7 @@ export function TrainingSessionProvider({ children }: { children: ReactNode }) {
       messages: [openingMessage],
     };
     setActiveCall(entry);
-    setViewingCallId(null);
+    setViewingCallId(entry.id);
   }
 
   function hangUp() {
@@ -106,7 +106,7 @@ export function TrainingSessionProvider({ children }: { children: ReactNode }) {
     setActiveCall(null);
   }
 
-  function selectFinishedCall(id: string | null) {
+  function selectCall(id: string | null) {
     setViewingCallId(id);
   }
 
@@ -157,7 +157,7 @@ export function TrainingSessionProvider({ children }: { children: ReactNode }) {
         viewingCallId,
         receiveCall,
         hangUp,
-        selectFinishedCall,
+        selectCall,
         updateCallForm,
         saveCall,
         appendMessage,
