@@ -37,16 +37,8 @@ export function ServiceOrders() {
 
   return (
     <section className="flex flex-1 flex-col gap-6 overflow-y-auto bg-zinc-50 p-6">
-      <header className="flex items-center gap-4 animate-fade-in">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-600">
-          <img src={serviceOrdersLogo} alt="Service Orders" className="h-7 w-7" />
-        </span>
-        <div>
-          <h2 className="text-base font-semibold text-zinc-900">Service Orders</h2>
-          <p className="text-sm text-zinc-500">
-            Consulte ordens de serviço por protocolo, número da OS, circuito ou CNPJ.
-          </p>
-        </div>
+      <header className="flex items-center self-start rounded-xl bg-indigo-600 px-6 py-4 animate-fade-in">
+        <img src={serviceOrdersLogo} alt="Service Orders" className="h-16 w-auto" />
       </header>
 
       <nav className="flex gap-1 rounded-lg border border-zinc-200 bg-white p-1 self-start animate-fade-in">
