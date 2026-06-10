@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import serviceOrdersLogo from '../../assets/logos/service-orders.svg';
 import { searchServiceOrders, type SomScope, type SomSearchFilters } from '../../utils/serviceOrders';
 import { useCreatedOrders } from '../../contexts/CreatedOrdersContext';
 import { usePersistedState } from '../../hooks/usePersistedState';
@@ -36,7 +37,11 @@ export function ServiceOrders() {
 
   return (
     <section className="flex flex-1 flex-col gap-6 overflow-y-auto bg-zinc-50 p-6">
-      <nav className="flex gap-2">
+      <header className="flex items-center self-start rounded-xl bg-indigo-600 px-6 py-4 animate-fade-in">
+        <img src={serviceOrdersLogo} alt="Service Orders" className="h-16 w-auto" />
+      </header>
+
+      <nav className="flex gap-1 rounded-lg border border-zinc-200 bg-white p-1 self-start animate-fade-in">
         <ScopeButton active={scope === 'busca'} onClick={() => handleScopeChange('busca')}>
           Busca
         </ScopeButton>
@@ -63,10 +68,8 @@ function ScopeButton({ active, onClick, children }: ScopeButtonProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-        active
-          ? 'bg-zinc-900 text-white'
-          : 'border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50'
+      className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+        active ? 'bg-indigo-600 text-white' : 'text-zinc-600 hover:bg-zinc-50'
       }`}
     >
       {children}
