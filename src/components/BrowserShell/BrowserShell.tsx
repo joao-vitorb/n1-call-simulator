@@ -11,7 +11,7 @@ export function BrowserShell() {
   const [activeTab, setActiveTab] = usePersistedState<TabId>('n1_active_tab', 'training-call');
 
   return (
-    <div className="flex h-screen flex-col bg-zinc-200">
+    <div className="flex h-screen flex-col bg-white">
       <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
       <main className="flex flex-1 overflow-hidden bg-white">
         <ModulePane visible={activeTab === 'training-call'}>
