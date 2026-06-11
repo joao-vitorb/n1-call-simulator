@@ -32,13 +32,16 @@ export function ProgressBar({ durationMs, onComplete }: ProgressBarProps) {
 
   return (
     <div>
-      <div className="mb-2 flex justify-between text-xs text-zinc-600">
-        <span>Testando circuito...</span>
-        <span>{Math.round(progress)}%</span>
+      <div className="mb-2 flex items-center justify-between text-xs">
+        <span className="flex items-center gap-2 font-medium text-zinc-700">
+          <span aria-hidden="true" className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
+          Testando circuito…
+        </span>
+        <span className="font-mono text-zinc-500">{Math.round(progress)}%</span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100">
         <div
-          className="h-full bg-emerald-500 transition-all"
+          className="h-full rounded-full bg-indigo-600 transition-all"
           style={{ width: `${progress}%` }}
         />
       </div>
