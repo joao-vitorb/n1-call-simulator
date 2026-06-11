@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import companyLogo from '../../assets/logos/company.svg';
 import { useAuth } from '../../contexts/AuthContext';
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9._-]{3,}$/;
@@ -20,17 +21,26 @@ export function LoginScreen() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-50/60 via-white to-zinc-50 p-4">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-32 right-[-10%] h-[420px] w-[420px] rounded-full bg-indigo-200/30 blur-3xl animate-orb-drift"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-32 left-[-10%] h-[360px] w-[360px] rounded-full bg-violet-200/25 blur-3xl animate-orb-drift-slow"
+      />
+
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-md"
+        className="relative w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm animate-slide-up"
       >
-        <h1 className="mb-2 text-2xl font-semibold text-zinc-900">N1 Call Simulator</h1>
-        <p className="mb-6 text-sm text-zinc-500">
+        <img src={companyLogo} alt="" className="mb-6 h-12 w-auto" />
+        <p className="mt-2 text-sm text-zinc-500">
           Entre com seu usuário para começar o treinamento.
         </p>
 
-        <label htmlFor="username" className="mb-2 block text-sm font-medium text-zinc-700">
+        <label htmlFor="username" className="mb-1.5 mt-6 block text-xs font-medium text-zinc-500">
           Usuário
         </label>
         <input
@@ -40,13 +50,13 @@ export function LoginScreen() {
           onChange={(event) => setUsername(event.target.value)}
           autoComplete="username"
           autoFocus
-          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200"
+          className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
         />
-        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
 
         <button
           type="submit"
-          className="mt-6 w-full rounded-lg bg-zinc-900 px-4 py-2 font-medium text-white transition-colors hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+          className="mt-6 w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-200"
         >
           Entrar
         </button>
