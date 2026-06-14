@@ -7,6 +7,7 @@ const PERSISTENT_KEYS = [
   'n1_client_hub_generated_protocols',
   'n1_client_hub_interactions',
   'n1_created_orders',
+  'n1_tab_orders',
 ];
 
 type AuthContextValue = {
