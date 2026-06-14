@@ -11,6 +11,8 @@ function buildInitialFormState(scenario: Scenario): CallFormState {
   const company = findCompanyById(scenario.companyId);
   const lookup = findContractByNumber(scenario.contractNumber);
   const contract = lookup?.contract;
+  const includeCircuitData = Math.random() >= 0.7;
+  const locality = contract ? `${contract.address.city} - ${contract.address.state}` : '';
   return {
     level1: '',
     level2: '',
@@ -19,9 +21,9 @@ function buildInitialFormState(scenario: Scenario): CallFormState {
     legalName: scenario.companyLegalName,
     cnpj: company?.cnpj ?? '',
     segment: company?.segment ?? '',
-    circuit: scenario.circuit,
-    product: scenario.productName,
-    locality: contract ? `${contract.address.city} - ${contract.address.state}` : '',
+    circuit: includeCircuitData ? scenario.circuit : '',
+    product: includeCircuitData ? scenario.productName : '',
+    locality: includeCircuitData ? locality : '',
     hasCallback: '',
     callbackProtocol: '',
     observation: '',

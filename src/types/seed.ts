@@ -1,6 +1,5 @@
 import type { ProductType } from './contract';
 import type { Company } from './company';
-import type { Scenario } from './scenario';
 import type { SeedUser } from './seedUser';
 
 export type SeedMetadata = {
@@ -23,5 +22,5 @@ export type FakeSeed = {
   traineeUsers: SeedUser[];
   supervisorUsers: SeedUser[];
   companies: Company[];
-  trainingScenarioSeeds: Scenario[];
+  trainingScenarioSeeds: unknown[];
 };

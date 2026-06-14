@@ -5,6 +5,5 @@ export const seed = fakeSeedJson as FakeSeed;
 
 export const seedMetadata = seed.metadata;
 export const companies = seed.companies;
-export const trainingScenarios = seed.trainingScenarioSeeds;
 export const traineeUsers = seed.traineeUsers;
 export const supervisorUsers = seed.supervisorUsers;
