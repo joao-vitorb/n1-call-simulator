@@ -11,3 +11,9 @@ export const TABS: TabDefinition[] = [
   { id: 'link-test', label: 'Link Test' },
   { id: 'service-orders', label: 'Service Orders' },
 ];
+
+export const DEFAULT_TAB_ORDER: TabId[] = TABS.map((tab) => tab.id);
+
+export const TAB_BY_ID = Object.fromEntries(
+  TABS.map((tab) => [tab.id, tab]),
+) as Record<TabId, TabDefinition>;
