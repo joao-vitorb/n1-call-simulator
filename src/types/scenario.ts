@@ -2,6 +2,8 @@ import type { ProductType } from './contract';
 
 export type ScenarioDifficulty = 'Beginner' | 'Intermediate' | 'Advanced';
 
+export type DisclosureStyle = 'forthcoming' | 'partial' | 'reserved';
+
 export type VoiceProfile = {
   tone: string;
   speed: string;
@@ -26,4 +28,8 @@ export type Scenario = {
   expectedActions: string[];
   correctSlaHoursToInform: number;
   voiceProfile: VoiceProfile;
+  symptom: string;
+  faultCategory: string;
+  isFcr: boolean;
+  disclosureStyle: DisclosureStyle;
 };

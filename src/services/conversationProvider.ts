@@ -1,4 +1,6 @@
-import type { Scenario } from '../types/scenario';
+import type { DisclosureStyle, Scenario } from '../types/scenario';
+import { findCompanyById } from '../utils/companies';
+import { localCustomerReply } from './localCustomerProvider';
 
 export type ConversationRole = 'agent' | 'customer';
 
@@ -24,21 +26,45 @@ const NOTICE_MARKERS = [
   'enter.pollinations.ai',
 ];
 
+function disclosureRule(style: DisclosureStyle): string {
+  if (style === 'forthcoming') {
+    return '- Você está mais colaborativo: pode já adiantar seu nome e descrever o problema com suas palavras logo no começo, mas ainda assim de forma leiga.';
+  }
+  if (style === 'partial') {
+    return '- Você dá as informações pela metade: fala uma parte (o nome OU o problema) e o resto só quando o atendente perguntar.';
+  }
+  return '- Você fala pouco: dá quase nenhuma informação de início. O atendente precisa extrair tudo de você com perguntas.';
+}
+
 function buildSystemPrompt(scenario: Scenario): string {
+  const company = findCompanyById(scenario.companyId);
+  const firstName = scenario.contactName.split(' ')[0];
+  const cnpj = company?.cnpj ?? '';
+  const companyName = company?.tradeName || scenario.companyLegalName;
+
   return [
-    `Você é ${scenario.contactName} da empresa ${scenario.companyLegalName}.`,
-    `Você ligou para o atendimento N1 da operadora.`,
-    `Seu humor atual é: ${scenario.customerMood}.`,
-    `Você está enfrentando o seguinte problema: ${scenario.scenarioType} no serviço ${scenario.productName}.`,
-    `Você é cliente do contrato ${scenario.contractNumber}, circuito ${scenario.circuit}.`,
+    `Você é ${firstName} (nome completo ${scenario.contactName}), cliente da empresa ${scenario.companyLegalName}${companyName ? ` (${companyName})` : ''}.`,
+    'Você ligou para o suporte técnico N1 da operadora de telecom porque tem um problema no seu serviço.',
+    `O que você percebe e está te incomodando: ${scenario.symptom}.`,
+    `Seu humor atual é: ${scenario.customerMood}. Deixe isso transparecer no tom, sem exagerar.`,
     '',
-    'Regras de comportamento:',
-    '- Responda SEMPRE em português brasileiro, em primeira pessoa, como um cliente real falando ao telefone.',
-    '- Use frases curtas, naturais, como em uma ligação. Nunca formal demais.',
-    '- NÃO seja prestativo nem assistente. Você é um cliente esperando ser atendido.',
-    '- Se o atendente pedir CNPJ, nome, telefone ou dados que você teria, forneça com base no seu cenário.',
-    '- Se o atendente for confuso, lento, ou não souber resolver, mostre impaciência condizente com o seu humor.',
-    '- Se o atendente resolver ou agir corretamente, demonstre alívio ou agradecimento.',
+    'Dados que você conhece e fornece SOMENTE quando o atendente perguntar:',
+    `- Seu nome: ${firstName} (na maioria das vezes diga só o primeiro nome; raramente o nome completo).`,
+    `- Nome da empresa: ${scenario.companyLegalName}.`,
+    cnpj ? `- CNPJ: ${cnpj}.` : '- CNPJ: diga que precisa procurar se perguntarem.',
+    `- Telefone de contato: ${scenario.customerPhone}.`,
+    'Você NÃO sabe de cor número de circuito, contrato ou dados técnicos da rede. Se perguntarem isso, diga que não sabe.',
+    '',
+    'Como você se comporta:',
+    disclosureRule(scenario.disclosureStyle),
+    '- Responda SEMPRE em português brasileiro, em primeira pessoa, com frases curtas e naturais de quem está ao telefone.',
+    '- Você é LEIGO em tecnologia. NUNCA use termos técnicos como circuito, mac address, pacote, latência, vlan, fcr, protocolo ou nome de produto/velocidade. Descreva só o que você sente ("parou", "tá caindo", "tá lento", "não consigo ligar", "tá picotando").',
+    '- NUNCA diga o nome técnico do problema nem tente diagnosticar a causa. Você não sabe por que está acontecendo.',
+    '- Responda só o que foi perguntado. Não despeje todas as informações de uma vez.',
+    '- Quando o atendente afunilar com uma pergunta mais específica (ex.: "é pra todos os números ou só alguns?"), aí sim detalhe melhor o que está acontecendo.',
+    '- Você NÃO é um assistente. Não ajude o atendente, não sugira soluções. Você é um cliente esperando ser atendido.',
+    '- Se o atendente demorar, se enrolar ou não souber resolver, mostre impaciência condizente com o seu humor.',
+    '- Se o atendente agir corretamente ou resolver, demonstre alívio ou agradecimento.',
     '- Você nunca encerra a ligação por conta própria; apenas responde.',
     '- Nunca quebre o papel: você é o cliente, ponto.',
   ].join('\n');
@@ -68,10 +94,10 @@ async function requestModel(
       ...history.map(toOpenAIMessage),
     ],
     private: true,
-    referrer: POLLINATIONS_REFERRER,
   };
 
-  const response = await fetch(POLLINATIONS_ENDPOINT, {
+  const url = `${POLLINATIONS_ENDPOINT}?referrer=${encodeURIComponent(POLLINATIONS_REFERRER)}`;
+  const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -108,5 +134,15 @@ export const pollinationsProvider: ConversationProvider = {
     throw new Error(
       `Nenhum modelo do Pollinations respondeu corretamente (${errors.join(' | ')}).`,
     );
+  },
+};
+
+export const customerProvider: ConversationProvider = {
+  async reply(scenario, history) {
+    try {
+      return await pollinationsProvider.reply(scenario, history);
+    } catch {
+      return localCustomerReply(scenario, history);
+    }
   },
 };

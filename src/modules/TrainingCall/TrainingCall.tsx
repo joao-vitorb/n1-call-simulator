@@ -5,7 +5,7 @@ import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { pickRandomScenario } from '../../services/scenarioEngine';
 import {
-  pollinationsProvider,
+  customerProvider,
   type ConversationMessage,
 } from '../../services/conversationProvider';
 import { CallSidebar } from './CallSidebar';
@@ -69,7 +69,7 @@ export function TrainingCall() {
     setAsrError(null);
     setAiBusy(true);
     try {
-      const reply = await pollinationsProvider.reply(activeCall.scenario, [
+      const reply = await customerProvider.reply(activeCall.scenario, [
         ...activeCall.messages,
         agentMessage,
       ]);
