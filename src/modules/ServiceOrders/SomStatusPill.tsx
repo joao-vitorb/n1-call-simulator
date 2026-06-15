@@ -18,11 +18,23 @@ const DOT_CLASS: Record<Tone, string> = {
 
 function toneForStatus(status: string): Tone {
   const value = status.toLowerCase();
-  if (value.includes('cancel')) return 'red';
-  if (value.includes('finaliz') || value.includes('conclu') || value.includes('encerr') || value.includes('resolv')) {
+  if (value.includes('cancel') || value.includes('interromp')) return 'red';
+  if (
+    value.includes('finaliz') ||
+    value.includes('conclu') ||
+    value.includes('encerr') ||
+    value.includes('resolv') ||
+    value.includes('fechad')
+  ) {
     return 'emerald';
   }
-  if (value.includes('andamento') || value.includes('execu') || value.includes('investiga') || value.includes('pend')) {
+  if (
+    value.includes('tratamento') ||
+    value.includes('andamento') ||
+    value.includes('execu') ||
+    value.includes('investiga') ||
+    value.includes('pend')
+  ) {
     return 'amber';
   }
   if (value.includes('aberto')) return 'indigo';

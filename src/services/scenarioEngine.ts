@@ -1,7 +1,13 @@
 import { companies } from '../data/seed';
 import type { Company } from '../types/company';
 import type { Contract } from '../types/contract';
-import type { DisclosureStyle, Scenario, ScenarioDifficulty } from '../types/scenario';
+import type { ServiceOrder } from '../types/serviceOrder';
+import type {
+  DemandType,
+  DisclosureStyle,
+  Scenario,
+  ScenarioDifficulty,
+} from '../types/scenario';
 
 type Symptom = {
   full: string;
@@ -134,7 +140,7 @@ function toneForMood(mood: string): string {
   return 'neutro';
 }
 
-export function pickRandomScenario(): Scenario {
+function buildTechnicalScenario(): Scenario {
   const pairs = collectActiveContracts();
   const { company, contract } = pick(pairs);
   const { symptom, isFcr } = resolveSymptom(contract);
@@ -173,5 +179,94 @@ export function pickRandomScenario(): Scenario {
     faultCategory: symptom.category,
     isFcr,
     disclosureStyle: style,
+    demandType: 'technical',
+    ticketProtocol: null,
   };
+}
+
+function collectOrders(): { company: Company; order: ServiceOrder }[] {
+  const pairs: { company: Company; order: ServiceOrder }[] = [];
+  for (const company of companies) {
+    for (const contract of company.contracts) {
+      for (const order of contract.serviceOrders) {
+        pairs.push({ company, order });
+      }
+    }
+  }
+  return pairs;
+}
+
+function buildTicketStatusScenario(): Scenario {
+  const pairs = collectOrders();
+  if (pairs.length === 0) return buildTechnicalScenario();
+  const { company, order } = pick(pairs);
+  const contactName = company.responsibleContact.name;
+  const firstName = contactName.split(' ')[0];
+  const companyShortName = company.tradeName || company.legalName;
+  const phone = company.responsibleContact.phone;
+  const style = pick(DISCLOSURE_STYLES);
+  const mood = pick(MOODS);
+  const symptom: Symptom = {
+    full: 'queria saber como está o meu chamado',
+    vague: 'queria saber de um chamado',
+    category: 'ticket-status',
+    label: 'Status de chamado',
+  };
+
+  return {
+    id: `scenario_${Date.now()}_${Math.floor(Math.random() * 100000)}`,
+    difficulty: pick(DIFFICULTIES),
+    companyId: company.id,
+    companyLegalName: company.legalName,
+    contactName,
+    customerPhone: `(${phone.ddd}) ${phone.number}`,
+    productType: order.productType,
+    productName: order.product,
+    contractNumber: order.contractNumber,
+    circuit: order.circuit,
+    scenarioType: symptom.label,
+    customerMood: mood,
+    openingLine: buildOpeningLine(style, firstName, companyShortName, symptom),
+    hasOpenServiceOrderForSameCircuit: order.finishedAt === null,
+    expectedActions: [
+      'confirm_customer_data',
+      'search_os_in_som',
+      'inform_os_status',
+      'categorize_call',
+      'save_call',
+    ],
+    correctSlaHoursToInform: order.slaHours,
+    voiceProfile: {
+      tone: toneForMood(mood),
+      speed: pick(['Normal', 'Rápida', 'Pausada']),
+      formality: pick(['Informal', 'Neutra']),
+    },
+    symptom: symptom.full,
+    faultCategory: symptom.category,
+    isFcr: false,
+    disclosureStyle: style,
+    demandType: 'ticket-status',
+    ticketProtocol: order.protocol,
+  };
+}
+
+const DEMAND_WEIGHTS: { type: DemandType; weight: number }[] = [
+  { type: 'technical', weight: 1 },
+  { type: 'ticket-status', weight: 1 },
+];
+
+function pickDemandType(): DemandType {
+  const total = DEMAND_WEIGHTS.reduce((sum, item) => sum + item.weight, 0);
+  let roll = Math.random() * total;
+  for (const item of DEMAND_WEIGHTS) {
+    if (roll < item.weight) return item.type;
+    roll -= item.weight;
+  }
+  return 'technical';
+}
+
+export function pickRandomScenario(): Scenario {
+  return pickDemandType() === 'ticket-status'
+    ? buildTicketStatusScenario()
+    : buildTechnicalScenario();
 }
