@@ -4,6 +4,7 @@ import { BrowserShell } from './components/BrowserShell/BrowserShell';
 import { TrainingSessionProvider } from './contexts/TrainingSessionContext';
 import { CreatedOrdersProvider } from './contexts/CreatedOrdersContext';
 import { ClientHubDataProvider } from './contexts/ClientHubDataContext';
+import { TicketUpdatesProvider } from './contexts/TicketUpdatesContext';
 
 function App() {
   const { currentUser } = useAuth();
@@ -16,7 +17,9 @@ function App() {
     <ClientHubDataProvider>
       <TrainingSessionProvider>
         <CreatedOrdersProvider>
-          <BrowserShell />
+          <TicketUpdatesProvider>
+            <BrowserShell />
+          </TicketUpdatesProvider>
         </CreatedOrdersProvider>
       </TrainingSessionProvider>
     </ClientHubDataProvider>

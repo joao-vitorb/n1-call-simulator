@@ -1,16 +1,69 @@
+import { useState, type ReactNode } from 'react';
 import { findCompanyByOrder } from '../../utils/serviceOrders';
 import { formatDateTime, formatSlaRemaining } from '../../utils/date';
+import { parseCustomerPhone } from '../../utils/protocols';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTicketUpdates } from '../../contexts/TicketUpdatesContext';
+import { buildJourneyNotes, resolveStatus } from '../../utils/ticketJourney';
 import type { ServiceOrder } from '../../types/serviceOrder';
 import { SomStatusPill } from './SomStatusPill';
+import { ReexecuteModal, type ReexecuteInput } from './ReexecuteModal';
 
 type SomOrderPageProps = {
   order: ServiceOrder;
   onBack: () => void;
 };
 
-export function SomOrderPage({ order, onBack }: SomOrderPageProps) {
+export function SomOrderPage({ order: baseOrder, onBack }: SomOrderPageProps) {
+  const { currentUser } = useAuth();
+  const { mergeOrder, updateTicket } = useTicketUpdates();
+  const overlaid = mergeOrder({ ...baseOrder, notes: [] });
+  const order = {
+    ...overlaid,
+    status: resolveStatus(overlaid),
+    notes: [...buildJourneyNotes(overlaid), ...overlaid.notes],
+  };
   const company = findCompanyByOrder(order);
   const remaining = formatSlaRemaining(order.dueAt);
+
+  const [noteText, setNoteText] = useState('');
+  const [showReexecute, setShowReexecute] = useState(false);
+  const author = currentUser?.username ?? 'atendente';
+  const canReexecute = order.stage === 'Aceite';
+
+  function handleAddNote() {
+    const text = noteText.trim();
+    if (!text) return;
+    updateTicket(order.serviceOrderNumber, {
+      note: { createdAt: new Date().toISOString(), author, text },
+    });
+    setNoteText('');
+  }
+
+  function handleEscalate() {
+    updateTicket(order.serviceOrderNumber, {
+      note: {
+        createdAt: new Date().toISOString(),
+        author,
+        text: 'Cliente solicitou prioridade. Chamado escalonado.',
+      },
+    });
+  }
+
+  function handleReexecute(input: ReexecuteInput) {
+    updateTicket(order.serviceOrderNumber, {
+      status: 'Aberto',
+      stage: 'Investigação dados',
+      finishedAt: null,
+      contact: {
+        name: input.name,
+        phone: parseCustomerPhone(input.phone),
+        email: order.contact.email,
+      },
+      note: { createdAt: new Date().toISOString(), author, text: input.observation },
+    });
+    setShowReexecute(false);
+  }
 
   return (
     <section className="flex flex-1 flex-col gap-4 overflow-y-auto bg-zinc-50 p-6">
@@ -85,6 +138,50 @@ export function SomOrderPage({ order, onBack }: SomOrderPageProps) {
         </Card>
       </div>
 
+      <Card title="Ações">
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={handleEscalate}
+            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+          >
+            Escalonar chamado
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowReexecute(true)}
+            disabled={!canReexecute}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Reexecutar chamado
+          </button>
+          {!canReexecute && (
+            <span className="self-center text-xs text-zinc-400">
+              Reexecução disponível apenas na etapa Aceite.
+            </span>
+          )}
+        </div>
+
+        <Divider>Adicionar observação</Divider>
+        <textarea
+          value={noteText}
+          onChange={(event) => setNoteText(event.target.value)}
+          rows={3}
+          placeholder="Escreva uma observação para o chamado…"
+          className="w-full resize-none rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        />
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={handleAddNote}
+            disabled={!noteText.trim()}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Salvar observação
+          </button>
+        </div>
+      </Card>
+
       <div className="rounded-xl border border-zinc-200 bg-white animate-fade-in">
         <div className="border-b border-zinc-200 px-6 py-4">
           <h3 className="text-sm font-semibold text-zinc-900">Observações</h3>
@@ -109,13 +206,21 @@ export function SomOrderPage({ order, onBack }: SomOrderPageProps) {
           )}
         </div>
       </div>
+
+      {showReexecute && (
+        <ReexecuteModal
+          orderNumber={order.serviceOrderNumber}
+          onConfirm={handleReexecute}
+          onClose={() => setShowReexecute(false)}
+        />
+      )}
     </section>
   );
 }
 
 type CardProps = {
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
 };
 
 function Card({ title, children }: CardProps) {

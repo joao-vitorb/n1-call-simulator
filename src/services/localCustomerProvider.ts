@@ -63,6 +63,17 @@ export function localCustomerReply(scenario: Scenario, history: ConversationMess
     return pick([scenario.companyLegalName, `Aqui é da ${scenario.companyLegalName}.`]);
   }
 
+  if (
+    scenario.ticketProtocol &&
+    has(agentText, /chamado|protocolo|numero da os|ordem de servico/)
+  ) {
+    return pick([
+      scenario.ticketProtocol,
+      `É o ${scenario.ticketProtocol}.`,
+      `O protocolo é ${scenario.ticketProtocol}.`,
+    ]);
+  }
+
   const narrowing = has(
     agentText,
     /todos|algum|especific|ddd|recebendo|fazendo|origina|externa|interna|so (alguns|um)|de novo|exatamente|como assim/,

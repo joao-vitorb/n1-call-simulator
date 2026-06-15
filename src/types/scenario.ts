@@ -4,6 +4,8 @@ export type ScenarioDifficulty = 'Beginner' | 'Intermediate' | 'Advanced';
 
 export type DisclosureStyle = 'forthcoming' | 'partial' | 'reserved';
 
+export type DemandType = 'technical' | 'commercial' | 'ticket-status' | 'massiva';
+
 export type VoiceProfile = {
   tone: string;
   speed: string;
@@ -32,4 +34,6 @@ export type Scenario = {
   faultCategory: string;
   isFcr: boolean;
   disclosureStyle: DisclosureStyle;
+  demandType: DemandType;
+  ticketProtocol: string | null;
 };

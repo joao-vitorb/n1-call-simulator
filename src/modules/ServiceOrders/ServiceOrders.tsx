@@ -2,6 +2,8 @@ import { useState } from 'react';
 import serviceOrdersLogo from '../../assets/logos/service-orders.svg';
 import { searchServiceOrders, type SomScope, type SomSearchFilters } from '../../utils/serviceOrders';
 import { useCreatedOrders } from '../../contexts/CreatedOrdersContext';
+import { useTicketUpdates } from '../../contexts/TicketUpdatesContext';
+import { resolveStatus } from '../../utils/ticketJourney';
 import { usePersistedState } from '../../hooks/usePersistedState';
 import type { ServiceOrder } from '../../types/serviceOrder';
 import { SomSearchForm } from './SomSearchForm';
@@ -10,6 +12,7 @@ import { SomOrderPage } from './SomOrderPage';
 
 export function ServiceOrders() {
   const { createdOrders } = useCreatedOrders();
+  const { mergeOrder } = useTicketUpdates();
   const [scope, setScope] = usePersistedState<SomScope>('n1_som_scope', 'busca');
   const [results, setResults] = useState<ServiceOrder[] | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
@@ -52,7 +55,15 @@ export function ServiceOrders() {
 
       <SomSearchForm scope={scope} onSearch={handleSearch} onClear={handleClear} />
 
-      {results !== null && <SomResultsTable results={results} onSelect={setSelectedOrder} />}
+      {results !== null && (
+        <SomResultsTable
+          results={results.map((order) => {
+            const merged = mergeOrder(order);
+            return { ...merged, status: resolveStatus(merged) };
+          })}
+          onSelect={setSelectedOrder}
+        />
+      )}
     </section>
   );
 }

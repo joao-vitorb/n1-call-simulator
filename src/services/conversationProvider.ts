@@ -41,11 +41,25 @@ function buildSystemPrompt(scenario: Scenario): string {
   const firstName = scenario.contactName.split(' ')[0];
   const cnpj = company?.cnpj ?? '';
   const companyName = company?.tradeName || scenario.companyLegalName;
+  const isTicketStatus = scenario.demandType === 'ticket-status';
+  const reasonLine = isTicketStatus
+    ? 'Você ligou para o suporte N1 da operadora para saber o status de um chamado seu que já está aberto.'
+    : 'Você ligou para o suporte técnico N1 da operadora de telecom porque tem um problema no seu serviço.';
+  const motiveLine = isTicketStatus
+    ? `O motivo da sua ligação: ${scenario.symptom}.`
+    : `O que você percebe e está te incomodando: ${scenario.symptom}.`;
+  const ticketBlock = isTicketStatus
+    ? [
+        '',
+        `Sobre o chamado: você só conhece o PROTOCOLO do seu chamado, que é ${scenario.ticketProtocol}. Informe esse protocolo quando o atendente pedir, ou diga que não tem em mãos agora (conforme o seu estilo). Você NÃO conhece o número da OS nem detalhes técnicos do chamado — apenas o protocolo.`,
+        'Quando o atendente informar a situação do chamado, reaja como cliente: você pode aceitar, pedir prioridade, pedir para registrar uma observação, ou — se ele disser que o chamado foi encerrado — pedir para reabrir/reexecutar. Nunca cite termos do sistema interno.',
+      ]
+    : [];
 
   return [
     `Você é ${firstName} (nome completo ${scenario.contactName}), cliente da empresa ${scenario.companyLegalName}${companyName ? ` (${companyName})` : ''}.`,
-    'Você ligou para o suporte técnico N1 da operadora de telecom porque tem um problema no seu serviço.',
-    `O que você percebe e está te incomodando: ${scenario.symptom}.`,
+    reasonLine,
+    motiveLine,
     `Seu humor atual é: ${scenario.customerMood}. Deixe isso transparecer no tom, sem exagerar.`,
     '',
     'Dados que você conhece e fornece SOMENTE quando o atendente perguntar:',
@@ -54,6 +68,7 @@ function buildSystemPrompt(scenario: Scenario): string {
     cnpj ? `- CNPJ: ${cnpj}.` : '- CNPJ: diga que precisa procurar se perguntarem.',
     `- Telefone de contato: ${scenario.customerPhone}.`,
     'Você NÃO sabe de cor número de circuito, contrato ou dados técnicos da rede. Se perguntarem isso, diga que não sabe.',
+    ...ticketBlock,
     '',
     'Como você se comporta:',
     disclosureRule(scenario.disclosureStyle),

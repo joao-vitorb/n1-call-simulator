@@ -8,6 +8,7 @@ const PERSISTENT_KEYS = [
   'n1_client_hub_interactions',
   'n1_created_orders',
   'n1_tab_orders',
+  'n1_ticket_updates',
 ];
 
 type AuthContextValue = {
