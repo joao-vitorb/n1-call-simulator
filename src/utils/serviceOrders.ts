@@ -1,4 +1,5 @@
 import { companies } from '../data/seed';
+import { getMassivaOrders } from './massiva';
 import type { Company } from '../types/company';
 import type { Contract } from '../types/contract';
 import type { ServiceOrder, ServiceOrderNote, ServiceOrderType } from '../types/serviceOrder';
@@ -41,7 +42,7 @@ export function searchServiceOrders(
   const circuit = filters.circuit?.trim() ?? '';
   const cnpj = filters.cnpj?.replace(/\D/g, '') ?? '';
 
-  const pool: ServiceOrder[] = [...extra, ...getAllServiceOrders()];
+  const pool: ServiceOrder[] = [...extra, ...getAllServiceOrders(), ...getMassivaOrders()];
 
   return pool.filter((order) => {
     if (scope === 'busca' && order.productType !== 'Banda Larga') return false;

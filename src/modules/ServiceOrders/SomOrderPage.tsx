@@ -5,6 +5,7 @@ import { parseCustomerPhone } from '../../utils/protocols';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTicketUpdates } from '../../contexts/TicketUpdatesContext';
 import { buildJourneyNotes, resolveStatus } from '../../utils/ticketJourney';
+import { getMassivaByOs, massivaNotes } from '../../utils/massiva';
 import type { ServiceOrder } from '../../types/serviceOrder';
 import { SomStatusPill } from './SomStatusPill';
 import { ReexecuteModal, type ReexecuteInput } from './ReexecuteModal';
@@ -18,10 +19,12 @@ export function SomOrderPage({ order: baseOrder, onBack }: SomOrderPageProps) {
   const { currentUser } = useAuth();
   const { mergeOrder, updateTicket } = useTicketUpdates();
   const overlaid = mergeOrder({ ...baseOrder, notes: [] });
+  const massiva = getMassivaByOs(overlaid.serviceOrderNumber);
+  const baseNotes = massiva ? massivaNotes(massiva) : buildJourneyNotes(overlaid);
   const order = {
     ...overlaid,
     status: resolveStatus(overlaid),
-    notes: [...buildJourneyNotes(overlaid), ...overlaid.notes],
+    notes: [...baseNotes, ...overlaid.notes],
   };
   const company = findCompanyByOrder(order);
   const remaining = formatSlaRemaining(order.dueAt);

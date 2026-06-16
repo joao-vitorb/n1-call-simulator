@@ -9,9 +9,10 @@ const IMPACT_OPTIONS = ['Baixo', 'Médio', 'Alto', 'Crítico'];
 type InternetLinkScriptProps = {
   onComplete: (result: ScriptResult) => void;
   onCancel: () => void;
+  massivaOs: string | null;
 };
 
-export function InternetLinkScript({ onComplete, onCancel }: InternetLinkScriptProps) {
+export function InternetLinkScript({ onComplete, onCancel, massivaOs }: InternetLinkScriptProps) {
   const [page, setPage] = useState<1 | 2>(1);
   const [problem, setProblem] = useState('');
   const [impact, setImpact] = useState('');
@@ -22,7 +23,10 @@ export function InternetLinkScript({ onComplete, onCancel }: InternetLinkScriptP
   const [customerName, setCustomerName] = useState('');
   const [email1, setEmail1] = useState('');
   const [email2, setEmail2] = useState('');
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(
+    massivaOs ? `OS de massiva associada: ${massivaOs}\n` : '',
+  );
+  const [massivaAssoc, setMassivaAssoc] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   function handleNext(event: FormEvent<HTMLFormElement>) {
@@ -70,6 +74,23 @@ export function InternetLinkScript({ onComplete, onCancel }: InternetLinkScriptP
     return (
       <form onSubmit={handleNext} className="space-y-4">
         <FormStep current={1} total={2} />
+        {massivaOs ? (
+          <div>
+            <span className="mb-1 block text-xs font-medium text-zinc-500">
+              Associado à massiva?
+            </span>
+            <div className="cursor-not-allowed rounded-lg border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm text-zinc-500">
+              Sim
+            </div>
+          </div>
+        ) : (
+          <FormSelect
+            label="Associado à massiva?"
+            value={massivaAssoc}
+            options={['Sim', 'Não']}
+            onChange={setMassivaAssoc}
+          />
+        )}
         <FormSelect label="Problema" value={problem} options={PROBLEM_OPTIONS} onChange={setProblem} />
         <FormSelect label="Impacto" value={impact} options={IMPACT_OPTIONS} onChange={setImpact} />
         <FormSelect
