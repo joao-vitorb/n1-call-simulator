@@ -3,6 +3,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useCreatedOrders } from '../../../contexts/CreatedOrdersContext';
 import { useTrainingSession } from '../../../contexts/TrainingSessionContext';
 import { buildServiceOrder } from '../../../utils/serviceOrders';
+import { getMassivaForCircuit } from '../../../utils/massiva';
 import type { Company } from '../../../types/company';
 import type { Contract, ProductType } from '../../../types/contract';
 import type { ServiceOrderType } from '../../../types/serviceOrder';
@@ -97,6 +98,7 @@ export function TechFormModal({ kind, contract, company, onClose }: TechFormModa
             <FormByKind
               kind={kind}
               productType={contract.productType}
+              massivaOs={getMassivaForCircuit(contract.circuit)?.osNumber ?? null}
               onComplete={handleComplete}
               onCancel={onClose}
             />
@@ -110,14 +112,17 @@ export function TechFormModal({ kind, contract, company, onClose }: TechFormModa
 type FormByKindProps = {
   kind: TechFormKind;
   productType: ProductType;
+  massivaOs: string | null;
   onComplete: (result: ScriptResult) => void;
   onCancel: () => void;
 };
 
-function FormByKind({ kind, productType, onComplete, onCancel }: FormByKindProps) {
+function FormByKind({ kind, productType, massivaOs, onComplete, onCancel }: FormByKindProps) {
   if (kind === 'script-integrado') {
     if (productType === 'Internet Link') {
-      return <InternetLinkScript onComplete={onComplete} onCancel={onCancel} />;
+      return (
+        <InternetLinkScript onComplete={onComplete} onCancel={onCancel} massivaOs={massivaOs} />
+      );
     }
     if (productType === 'Banda Larga') {
       return <BandaLargaScript onComplete={onComplete} onCancel={onCancel} />;
