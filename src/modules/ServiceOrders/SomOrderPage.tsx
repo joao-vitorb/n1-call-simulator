@@ -43,16 +43,6 @@ export function SomOrderPage({ order: baseOrder, onBack }: SomOrderPageProps) {
     setNoteText('');
   }
 
-  function handleEscalate() {
-    updateTicket(order.serviceOrderNumber, {
-      note: {
-        createdAt: new Date().toISOString(),
-        author,
-        text: 'Cliente solicitou prioridade. Chamado escalonado.',
-      },
-    });
-  }
-
   function handleReexecute(input: ReexecuteInput) {
     updateTicket(order.serviceOrderNumber, {
       status: 'Aberto',
@@ -143,13 +133,6 @@ export function SomOrderPage({ order: baseOrder, onBack }: SomOrderPageProps) {
 
       <Card title="Ações">
         <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={handleEscalate}
-            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
-          >
-            Escalonar chamado
-          </button>
           <button
             type="button"
             onClick={() => setShowReexecute(true)}

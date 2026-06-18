@@ -1,4 +1,5 @@
 import { companies } from '../data/seed';
+import { getMassivaForCircuit } from '../utils/massiva';
 import type { Company } from '../types/company';
 import type { Contract } from '../types/contract';
 import type { ServiceOrder } from '../types/serviceOrder';
@@ -140,11 +141,13 @@ function toneForMood(mood: string): string {
   return 'neutro';
 }
 
-function buildTechnicalScenario(): Scenario {
-  const pairs = collectActiveContracts();
-  const { company, contract } = pick(pairs);
-  const { symptom, isFcr } = resolveSymptom(contract);
-
+function assembleTechnical(
+  company: Company,
+  contract: Contract,
+  symptom: Symptom,
+  isFcr: boolean,
+  demandType: DemandType,
+): Scenario {
   const contactName = company.responsibleContact.name;
   const firstName = contactName.split(' ')[0];
   const companyShortName = company.tradeName || company.legalName;
@@ -179,9 +182,15 @@ function buildTechnicalScenario(): Scenario {
     faultCategory: symptom.category,
     isFcr,
     disclosureStyle: style,
-    demandType: 'technical',
+    demandType,
     ticketProtocol: null,
   };
+}
+
+function buildTechnicalScenario(): Scenario {
+  const { company, contract } = pick(collectActiveContracts());
+  const { symptom, isFcr } = resolveSymptom(contract);
+  return assembleTechnical(company, contract, symptom, isFcr, 'technical');
 }
 
 function collectOrders(): { company: Company; order: ServiceOrder }[] {
@@ -196,10 +205,11 @@ function collectOrders(): { company: Company; order: ServiceOrder }[] {
   return pairs;
 }
 
-function buildTicketStatusScenario(): Scenario {
-  const pairs = collectOrders();
-  if (pairs.length === 0) return buildTechnicalScenario();
-  const { company, order } = pick(pairs);
+function assembleTicketStatus(
+  company: Company,
+  order: ServiceOrder,
+  demandType: DemandType,
+): Scenario {
   const contactName = company.responsibleContact.name;
   const firstName = contactName.split(' ')[0];
   const companyShortName = company.tradeName || company.legalName;
@@ -245,14 +255,54 @@ function buildTicketStatusScenario(): Scenario {
     faultCategory: symptom.category,
     isFcr: false,
     disclosureStyle: style,
-    demandType: 'ticket-status',
+    demandType,
     ticketProtocol: order.protocol,
   };
+}
+
+function buildTicketStatusScenario(): Scenario {
+  const pairs = collectOrders();
+  if (pairs.length === 0) return buildTechnicalScenario();
+  const { company, order } = pick(pairs);
+  return assembleTicketStatus(company, order, 'ticket-status');
+}
+
+function collectMassivaContracts(): ContractPick[] {
+  return collectActiveContracts().filter(
+    ({ contract }) =>
+      contract.productType === 'Internet Link' && getMassivaForCircuit(contract.circuit) !== null,
+  );
+}
+
+function collectMassivaOrders(): { company: Company; order: ServiceOrder }[] {
+  return collectOrders().filter(({ order }) => getMassivaForCircuit(order.circuit) !== null);
+}
+
+function buildMassivaScenario(): Scenario {
+  if (chance(0.5)) {
+    const massivaOrders = collectMassivaOrders();
+    if (massivaOrders.length > 0) {
+      const { company, order } = pick(massivaOrders);
+      return assembleTicketStatus(company, order, 'massiva');
+    }
+  }
+  const massivaContracts = collectMassivaContracts();
+  if (massivaContracts.length > 0) {
+    const { company, contract } = pick(massivaContracts);
+    return assembleTechnical(company, contract, buildInternetSymptom('outage'), false, 'massiva');
+  }
+  const massivaOrders = collectMassivaOrders();
+  if (massivaOrders.length > 0) {
+    const { company, order } = pick(massivaOrders);
+    return assembleTicketStatus(company, order, 'massiva');
+  }
+  return buildTechnicalScenario();
 }
 
 const DEMAND_WEIGHTS: { type: DemandType; weight: number }[] = [
   { type: 'technical', weight: 1 },
   { type: 'ticket-status', weight: 1 },
+  { type: 'massiva', weight: 0.3 },
 ];
 
 function pickDemandType(): DemandType {
@@ -266,7 +316,8 @@ function pickDemandType(): DemandType {
 }
 
 export function pickRandomScenario(): Scenario {
-  return pickDemandType() === 'ticket-status'
-    ? buildTicketStatusScenario()
-    : buildTechnicalScenario();
+  const demand = pickDemandType();
+  if (demand === 'massiva') return buildMassivaScenario();
+  if (demand === 'ticket-status') return buildTicketStatusScenario();
+  return buildTechnicalScenario();
 }

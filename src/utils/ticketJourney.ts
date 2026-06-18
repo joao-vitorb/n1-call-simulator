@@ -1,3 +1,4 @@
+import { getMassivaForCircuit } from './massiva';
 import type { ServiceOrder, ServiceOrderNote } from '../types/serviceOrder';
 
 const STAGE_ORDER = [
@@ -59,6 +60,15 @@ export function buildJourneyNotes(order: ServiceOrder): ServiceOrderNote[] {
     } else if (status === 'Fechado') {
       texts.push('Cliente confirmou a tratativa. Chamado encerrado.');
     }
+  }
+
+  const massiva = getMassivaForCircuit(order.circuit);
+  if (massiva) {
+    texts.splice(
+      Math.min(2, texts.length),
+      0,
+      `Problema associado a evento massivo na região: ${massiva.region}. OS de massiva associada: ${massiva.osNumber}.`,
+    );
   }
 
   return texts.map((text, index) => {
