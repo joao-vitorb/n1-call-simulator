@@ -5,9 +5,11 @@ import type { CallEntry } from '../../types/trainingCall';
 type CallStageProps = {
   activeCall: CallEntry | null;
   muted: boolean;
+  paused: boolean;
   onReceive: () => void;
   onHangUp: () => void;
   onToggleMute: () => void;
+  onTogglePause: () => void;
 };
 
 function PhoneIcon() {
@@ -23,7 +25,15 @@ function PhoneIcon() {
   );
 }
 
-export function CallStage({ activeCall, muted, onReceive, onHangUp, onToggleMute }: CallStageProps) {
+export function CallStage({
+  activeCall,
+  muted,
+  paused,
+  onReceive,
+  onHangUp,
+  onToggleMute,
+  onTogglePause,
+}: CallStageProps) {
   const callSeconds = useElapsedTime(activeCall?.startedAt ?? null);
 
   if (!activeCall) {
@@ -84,9 +94,15 @@ export function CallStage({ activeCall, muted, onReceive, onHangUp, onToggleMute
           </button>
           <button
             type="button"
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+            onClick={onTogglePause}
+            aria-pressed={paused}
+            className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+              paused
+                ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
+            }`}
           >
-            Pause
+            {paused ? 'Em espera' : 'Pause'}
           </button>
           <button
             type="button"

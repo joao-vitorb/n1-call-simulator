@@ -87,6 +87,10 @@ export function localCustomerReply(scenario: Scenario, history: ConversationMess
     return giveFull ? `${capitalize(scenario.symptom)}.` : `${capitalize(vagueSymptom(scenario))}.`;
   }
 
+  if (has(agentText, /transferir|transferindo|setor responsavel|encaminhar|outro setor/)) {
+    return pick(['Tá bom, pode transferir.', 'Ok, obrigado.', 'Beleza, vou aguardar.']) + moodFlavor(scenario);
+  }
+
   if (has(agentText, /momento|aguard|verificar|checar|espera|so um|ja (volto|retorno)|vou (ver|olhar|verificar)|deixa eu (ver|olhar)/)) {
     return pick(['Tá bom, tô no aguardo.', 'Ok.', 'Sem problema, pode verificar.']) + moodFlavor(scenario);
   }
