@@ -7,6 +7,7 @@ export type CallStatus =
   | 'speaking'
   | 'thinking'
   | 'muted'
+  | 'paused'
   | 'unsupported'
   | 'error';
 
@@ -22,6 +23,7 @@ const STATUS_LABEL: Record<CallStatus, string> = {
   speaking: 'Cliente falando…',
   thinking: 'Cliente está pensando…',
   muted: 'Microfone mutado.',
+  paused: 'Ligação em espera.',
   unsupported: 'Microfone não suportado neste navegador (use Chrome ou Edge).',
   error: 'Erro no microfone.',
 };
@@ -32,6 +34,7 @@ const STATUS_DOT: Record<CallStatus, string> = {
   speaking: 'bg-indigo-500',
   thinking: 'bg-amber-500',
   muted: 'bg-red-500',
+  paused: 'bg-amber-500',
   unsupported: 'bg-zinc-300',
   error: 'bg-red-500',
 };

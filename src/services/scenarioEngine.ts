@@ -41,6 +41,14 @@ const INTERNET_FCR = [
   'tá tudo muito lento, parece que a internet tá com problema',
 ];
 
+const COMMERCIAL_SYMPTOMS: Symptom[] = [
+  { full: 'queria a segunda via da minha fatura', vague: 'queria resolver uma coisa da fatura', category: 'comercial_fatura', label: 'Comercial - Fatura' },
+  { full: 'minha fatura veio com um valor diferente do normal', vague: 'tô com uma dúvida na fatura', category: 'comercial_fatura', label: 'Comercial - Fatura' },
+  { full: 'preciso da nota fiscal do mês', vague: 'queria um documento aí', category: 'comercial_nf', label: 'Comercial - Nota fiscal' },
+  { full: 'quero cancelar o meu serviço', vague: 'queria falar sobre o meu contrato', category: 'comercial_cancelamento', label: 'Comercial - Cancelamento' },
+  { full: 'meu serviço foi bloqueado e eu queria um desbloqueio em confiança', vague: 'tô com o serviço bloqueado', category: 'comercial_desbloqueio', label: 'Comercial - Desbloqueio em confiança' },
+];
+
 function pick<T>(list: T[]): T {
   return list[Math.floor(Math.random() * list.length)];
 }
@@ -299,9 +307,15 @@ function buildMassivaScenario(): Scenario {
   return buildTechnicalScenario();
 }
 
+function buildCommercialScenario(): Scenario {
+  const { company, contract } = pick(collectActiveContracts());
+  return assembleTechnical(company, contract, pick(COMMERCIAL_SYMPTOMS), false, 'commercial');
+}
+
 const DEMAND_WEIGHTS: { type: DemandType; weight: number }[] = [
   { type: 'technical', weight: 1 },
   { type: 'ticket-status', weight: 1 },
+  { type: 'commercial', weight: 1 },
   { type: 'massiva', weight: 0.3 },
 ];
 
@@ -319,5 +333,6 @@ export function pickRandomScenario(): Scenario {
   const demand = pickDemandType();
   if (demand === 'massiva') return buildMassivaScenario();
   if (demand === 'ticket-status') return buildTicketStatusScenario();
+  if (demand === 'commercial') return buildCommercialScenario();
   return buildTechnicalScenario();
 }

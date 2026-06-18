@@ -42,12 +42,22 @@ function buildSystemPrompt(scenario: Scenario): string {
   const cnpj = company?.cnpj ?? '';
   const companyName = company?.tradeName || scenario.companyLegalName;
   const isTicketStatus = scenario.demandType === 'ticket-status';
+  const isCommercial = scenario.demandType === 'commercial';
   const reasonLine = isTicketStatus
     ? 'Você ligou para o suporte N1 da operadora para saber o status de um chamado seu que já está aberto.'
-    : 'Você ligou para o suporte técnico N1 da operadora de telecom porque tem um problema no seu serviço.';
-  const motiveLine = isTicketStatus
-    ? `O motivo da sua ligação: ${scenario.symptom}.`
-    : `O que você percebe e está te incomodando: ${scenario.symptom}.`;
+    : isCommercial
+      ? 'Você ligou para a operadora com uma demanda comercial (não é um problema técnico).'
+      : 'Você ligou para o suporte técnico N1 da operadora de telecom porque tem um problema no seu serviço.';
+  const motiveLine =
+    isTicketStatus || isCommercial
+      ? `O motivo da sua ligação: ${scenario.symptom}.`
+      : `O que você percebe e está te incomodando: ${scenario.symptom}.`;
+  const commercialBlock = isCommercial
+    ? [
+        '',
+        'Quando o atendente disser que vai te transferir para o setor responsável, aceite e aguarde. Você não conhece termos internos como "SAC" ou "ramal"; só quer resolver a sua demanda.',
+      ]
+    : [];
   const ticketBlock = isTicketStatus
     ? [
         '',
@@ -69,6 +79,7 @@ function buildSystemPrompt(scenario: Scenario): string {
     `- Telefone de contato: ${scenario.customerPhone}.`,
     'Você NÃO sabe de cor número de circuito, contrato ou dados técnicos da rede. Se perguntarem isso, diga que não sabe.',
     ...ticketBlock,
+    ...commercialBlock,
     '',
     'Como você se comporta:',
     disclosureRule(scenario.disclosureStyle),

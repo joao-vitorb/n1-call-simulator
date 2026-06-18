@@ -43,6 +43,7 @@ export function TrainingCall() {
   const { speak, cancel: cancelSpeech } = useSpeechSynthesis();
 
   const [muted, setMuted] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [ttsActive, setTtsActive] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [asrError, setAsrError] = useState<string | null>(null);
@@ -53,7 +54,7 @@ export function TrainingCall() {
     null;
 
   const { supported: asrSupported } = useSpeechRecognition({
-    active: !!activeCall && !muted && !ttsActive && !aiBusy,
+    active: !!activeCall && !muted && !paused && !ttsActive && !aiBusy,
     onResult: (transcript) => handleAgentSpoke(transcript),
     onError: (error) => setAsrError(`Erro no microfone: ${error}`),
   });
@@ -95,6 +96,7 @@ export function TrainingCall() {
   function handleReceiveCall() {
     cancelSpeech();
     setMuted(false);
+    setPaused(false);
     setAsrError(null);
     setAiBusy(false);
     const scenario = pickRandomScenario();
@@ -112,6 +114,7 @@ export function TrainingCall() {
     setTtsActive(false);
     setAiBusy(false);
     setMuted(false);
+    setPaused(false);
     hangUp();
   }
 
@@ -119,11 +122,23 @@ export function TrainingCall() {
     setMuted((value) => !value);
   }
 
+  function handleTogglePause() {
+    setPaused((value) => {
+      const next = !value;
+      if (next) {
+        cancelSpeech();
+        setTtsActive(false);
+      }
+      return next;
+    });
+  }
+
   const status: CallStatus = (() => {
     if (!viewingCall) return 'idle';
     if (!asrSupported) return 'unsupported';
     if (asrError) return 'error';
     if (activeCall?.id !== viewingCall.id) return 'idle';
+    if (paused) return 'paused';
     if (muted) return 'muted';
     if (aiBusy) return 'thinking';
     if (ttsActive) return 'speaking';
@@ -144,9 +159,11 @@ export function TrainingCall() {
         <CallStage
           activeCall={activeCall}
           muted={muted}
+          paused={paused}
           onReceive={handleReceiveCall}
           onHangUp={handleHangUp}
           onToggleMute={handleToggleMute}
+          onTogglePause={handleTogglePause}
         />
         {viewingCall ? (
           <>
