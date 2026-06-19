@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import trainingCallLogo from '../../assets/logos/training-call.svg';
+import dialButton from '../../assets/icons/transfer-button.svg';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatElapsed } from '../../utils/time';
 import type { CallEntry } from '../../types/trainingCall';
@@ -10,6 +12,9 @@ type CallSidebarProps = {
   finishedCalls: CallEntry[];
   selectedId: string | null;
   onSelectCall: (id: string | null) => void;
+  onDial: (number: string) => void;
+  dialDisabled: boolean;
+  dialError: string | null;
 };
 
 export function CallSidebar({
@@ -19,9 +24,22 @@ export function CallSidebar({
   finishedCalls,
   selectedId,
   onSelectCall,
+  onDial,
+  dialDisabled,
+  dialError,
 }: CallSidebarProps) {
   const { currentUser } = useAuth();
   const initial = currentUser?.username.charAt(0).toUpperCase() ?? '?';
+  const [dialing, setDialing] = useState(false);
+  const [number, setNumber] = useState('');
+
+  function handleDialSubmit() {
+    const value = number.trim();
+    if (!value) return;
+    onDial(value);
+    setNumber('');
+    setDialing(false);
+  }
 
   return (
     <aside className="flex w-80 shrink-0 flex-col border-r border-zinc-200 bg-white">
@@ -52,6 +70,54 @@ export function CallSidebar({
             <p className="mt-0.5 text-sm font-medium text-zinc-900">{callsCount}</p>
           </div>
         </div>
+      </div>
+
+      <div className="border-b border-zinc-200 p-4">
+        {dialing ? (
+          <div>
+            <input
+              type="text"
+              value={number}
+              autoFocus
+              onChange={(event) => setNumber(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') handleDialSubmit();
+              }}
+              placeholder="Ramal (ex.: 3002)"
+              className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 font-mono text-sm text-zinc-900 outline-none transition-colors placeholder:font-sans focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            />
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={handleDialSubmit}
+                className="flex-1 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-indigo-700"
+              >
+                Discar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDialing(false);
+                  setNumber('');
+                }}
+                className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setDialing(true)}
+            disabled={dialDisabled}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <img src={dialButton} alt="" className="h-5 w-5" />
+            Discar ramal
+          </button>
+        )}
+        {dialError && <p className="mt-2 text-xs text-red-600">{dialError}</p>}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
