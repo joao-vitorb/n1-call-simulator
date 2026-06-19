@@ -110,13 +110,13 @@ function looksLikeServiceNotice(text: string): boolean {
 
 async function requestModel(
   model: string,
-  scenario: Scenario,
+  systemPrompt: string,
   history: ConversationMessage[],
 ): Promise<string> {
   const body = {
     model,
     messages: [
-      { role: 'system', content: buildSystemPrompt(scenario) },
+      { role: 'system', content: systemPrompt },
       ...history.map(toOpenAIMessage),
     ],
     private: true,
@@ -146,20 +146,27 @@ async function requestModel(
   return text;
 }
 
+export async function callPollinations(
+  systemPrompt: string,
+  history: ConversationMessage[],
+): Promise<string> {
+  const errors: string[] = [];
+  for (const model of POLLINATIONS_MODELS) {
+    try {
+      return await requestModel(model, systemPrompt, history);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      errors.push(`${model}: ${message}`);
+    }
+  }
+  throw new Error(
+    `Nenhum modelo do Pollinations respondeu corretamente (${errors.join(' | ')}).`,
+  );
+}
+
 export const pollinationsProvider: ConversationProvider = {
   async reply(scenario, history) {
-    const errors: string[] = [];
-    for (const model of POLLINATIONS_MODELS) {
-      try {
-        return await requestModel(model, scenario, history);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        errors.push(`${model}: ${message}`);
-      }
-    }
-    throw new Error(
-      `Nenhum modelo do Pollinations respondeu corretamente (${errors.join(' | ')}).`,
-    );
+    return callPollinations(buildSystemPrompt(scenario), history);
   },
 };
 

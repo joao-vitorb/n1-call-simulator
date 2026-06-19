@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { CallEntry } from '../../types/trainingCall';
+import type { ConversationMessage } from '../../services/conversationProvider';
 
 export type CallStatus =
   | 'idle'
@@ -12,7 +12,8 @@ export type CallStatus =
   | 'error';
 
 type CallTranscriptProps = {
-  call: CallEntry;
+  messages: ConversationMessage[];
+  contactName: string;
   status: CallStatus;
   error: string | null;
 };
@@ -39,7 +40,7 @@ const STATUS_DOT: Record<CallStatus, string> = {
   error: 'bg-red-500',
 };
 
-export function CallTranscript({ call, status, error }: CallTranscriptProps) {
+export function CallTranscript({ messages, contactName, status, error }: CallTranscriptProps) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export function CallTranscript({ call, status, error }: CallTranscriptProps) {
       top: scrollerRef.current.scrollHeight,
       behavior: 'smooth',
     });
-  }, [call.messages.length]);
+  }, [messages.length]);
 
   return (
     <section className="flex max-h-80 shrink-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white animate-fade-in">
@@ -57,7 +58,7 @@ export function CallTranscript({ call, status, error }: CallTranscriptProps) {
 
       <div ref={scrollerRef} className="flex-1 overflow-y-auto bg-zinc-50/50 p-4">
         <ul className="space-y-3">
-          {call.messages.map((message, index) => (
+          {messages.map((message, index) => (
             <li
               key={`${message.timestamp}-${index}`}
               className={message.role === 'customer' ? 'flex justify-start' : 'flex justify-end'}
@@ -74,7 +75,7 @@ export function CallTranscript({ call, status, error }: CallTranscriptProps) {
                     message.role === 'customer' ? 'text-zinc-400' : 'text-indigo-200'
                   }`}
                 >
-                  {message.role === 'customer' ? call.scenario.contactName : 'Você'}
+                  {message.role === 'customer' ? contactName : 'Você'}
                 </p>
                 <p>{message.text}</p>
               </div>
@@ -83,7 +84,7 @@ export function CallTranscript({ call, status, error }: CallTranscriptProps) {
           {status === 'thinking' && (
             <li className="flex justify-start">
               <div className="rounded-2xl rounded-tl-sm bg-white px-3.5 py-2 text-sm text-zinc-400 ring-1 ring-zinc-200">
-                {call.scenario.contactName} está pensando…
+                {contactName} está pensando…
               </div>
             </li>
           )}

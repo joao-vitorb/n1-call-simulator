@@ -8,8 +8,11 @@ import {
   customerProvider,
   type ConversationMessage,
 } from '../../services/conversationProvider';
+import { sacProvider, sacOpeningLine } from '../../services/sacProvider';
+import { pickSacAttendant, SAC_NUMBER, type SacAttendant } from '../../utils/sac';
 import { CallSidebar } from './CallSidebar';
 import { CallStage } from './CallStage';
+import { SacCallStage } from './SacCallStage';
 import { CallTranscript, type CallStatus } from './CallTranscript';
 import { CallCategorization } from './CallCategorization';
 
@@ -25,6 +28,12 @@ function speedToRate(speed: string): number {
   }
   return 1;
 }
+
+type SacCall = {
+  attendant: SacAttendant;
+  startedAt: string;
+  messages: ConversationMessage[];
+};
 
 export function TrainingCall() {
   const {
@@ -47,6 +56,8 @@ export function TrainingCall() {
   const [ttsActive, setTtsActive] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [asrError, setAsrError] = useState<string | null>(null);
+  const [sacCall, setSacCall] = useState<SacCall | null>(null);
+  const [dialError, setDialError] = useState<string | null>(null);
 
   const viewingCall =
     [activeCall, ...finishedCalls].find((call) => call?.id === viewingCallId) ??
@@ -54,8 +65,16 @@ export function TrainingCall() {
     null;
 
   const { supported: asrSupported } = useSpeechRecognition({
-    active: !!activeCall && !muted && !paused && !ttsActive && !aiBusy,
-    onResult: (transcript) => handleAgentSpoke(transcript),
+    active: sacCall
+      ? !muted && !ttsActive && !aiBusy
+      : !!activeCall && !muted && !paused && !ttsActive && !aiBusy,
+    onResult: (transcript) => {
+      if (sacCall) {
+        handleAgentSpokeToSac(transcript);
+      } else {
+        handleAgentSpoke(transcript);
+      }
+    },
     onError: (error) => setAsrError(`Erro no microfone: ${error}`),
   });
 
@@ -93,10 +112,49 @@ export function TrainingCall() {
     }
   }
 
+  async function handleAgentSpokeToSac(transcript: string) {
+    if (!sacCall) return;
+    const attendant = sacCall.attendant;
+    const agentMessage: ConversationMessage = {
+      role: 'agent',
+      text: transcript,
+      timestamp: new Date().toISOString(),
+    };
+    const history = [...sacCall.messages, agentMessage];
+    setSacCall((current) =>
+      current ? { ...current, messages: [...current.messages, agentMessage] } : null,
+    );
+    setAsrError(null);
+    setAiBusy(true);
+    try {
+      const reply = await sacProvider.reply(attendant, history);
+      const sacMessage: ConversationMessage = {
+        role: 'customer',
+        text: reply,
+        timestamp: new Date().toISOString(),
+      };
+      setSacCall((current) =>
+        current ? { ...current, messages: [...current.messages, sacMessage] } : null,
+      );
+      setTtsActive(true);
+      speak(reply, {
+        onStart: () => setTtsActive(true),
+        onEnd: () => setTtsActive(false),
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao consultar a IA.';
+      setAsrError(message);
+    } finally {
+      setAiBusy(false);
+    }
+  }
+
   function handleReceiveCall() {
     cancelSpeech();
     setMuted(false);
     setPaused(false);
+    setSacCall(null);
+    setDialError(null);
     setAsrError(null);
     setAiBusy(false);
     const scenario = pickRandomScenario();
@@ -115,6 +173,8 @@ export function TrainingCall() {
     setAiBusy(false);
     setMuted(false);
     setPaused(false);
+    setSacCall(null);
+    setDialError(null);
     hangUp();
   }
 
@@ -133,12 +193,57 @@ export function TrainingCall() {
     });
   }
 
+  function handleDial(value: string) {
+    setDialError(null);
+    if (!activeCall) {
+      setDialError('Inicie uma ligação antes de discar.');
+      return;
+    }
+    if (sacCall) return;
+    if (value !== SAC_NUMBER) {
+      setDialError(`Ramal ${value} não atende.`);
+      return;
+    }
+    cancelSpeech();
+    setPaused(true);
+    const attendant = pickSacAttendant();
+    const startedAt = new Date().toISOString();
+    const opening = sacOpeningLine(attendant);
+    setSacCall({
+      attendant,
+      startedAt,
+      messages: [{ role: 'customer', text: opening, timestamp: startedAt }],
+    });
+    setTtsActive(true);
+    speak(opening, {
+      onStart: () => setTtsActive(true),
+      onEnd: () => setTtsActive(false),
+    });
+  }
+
+  function handleHangUpSac() {
+    cancelSpeech();
+    setTtsActive(false);
+    setAiBusy(false);
+    setSacCall(null);
+    setPaused(false);
+  }
+
   const status: CallStatus = (() => {
     if (!viewingCall) return 'idle';
     if (!asrSupported) return 'unsupported';
     if (asrError) return 'error';
     if (activeCall?.id !== viewingCall.id) return 'idle';
     if (paused) return 'paused';
+    if (muted) return 'muted';
+    if (aiBusy) return 'thinking';
+    if (ttsActive) return 'speaking';
+    return 'listening';
+  })();
+
+  const sacStatus: CallStatus = (() => {
+    if (!asrSupported) return 'unsupported';
+    if (asrError) return 'error';
     if (muted) return 'muted';
     if (aiBusy) return 'thinking';
     if (ttsActive) return 'speaking';
@@ -154,28 +259,56 @@ export function TrainingCall() {
         finishedCalls={finishedCalls}
         selectedId={viewingCallId}
         onSelectCall={selectCall}
+        onDial={handleDial}
+        dialDisabled={!activeCall || sacCall !== null}
+        dialError={dialError}
       />
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto bg-zinc-50 p-6">
-        <CallStage
-          activeCall={activeCall}
-          muted={muted}
-          paused={paused}
-          onReceive={handleReceiveCall}
-          onHangUp={handleHangUp}
-          onToggleMute={handleToggleMute}
-          onTogglePause={handleTogglePause}
-        />
-        {viewingCall ? (
+        {sacCall ? (
           <>
-            <CallTranscript call={viewingCall} status={status} error={asrError} />
-            <CallCategorization
-              call={viewingCall}
-              onUpdate={(updates) => updateCallForm(viewingCall.id, updates)}
-              onSave={() => saveCall(viewingCall.id)}
+            <SacCallStage
+              attendant={sacCall.attendant}
+              startedAt={sacCall.startedAt}
+              muted={muted}
+              onToggleMute={handleToggleMute}
+              onHangUp={handleHangUpSac}
+            />
+            <CallTranscript
+              messages={sacCall.messages}
+              contactName={sacCall.attendant.name}
+              status={sacStatus}
+              error={asrError}
             />
           </>
         ) : (
-          <EmptyForm />
+          <>
+            <CallStage
+              activeCall={activeCall}
+              muted={muted}
+              paused={paused}
+              onReceive={handleReceiveCall}
+              onHangUp={handleHangUp}
+              onToggleMute={handleToggleMute}
+              onTogglePause={handleTogglePause}
+            />
+            {viewingCall ? (
+              <>
+                <CallTranscript
+                  messages={viewingCall.messages}
+                  contactName={viewingCall.scenario.contactName}
+                  status={status}
+                  error={asrError}
+                />
+                <CallCategorization
+                  call={viewingCall}
+                  onUpdate={(updates) => updateCallForm(viewingCall.id, updates)}
+                  onSave={() => saveCall(viewingCall.id)}
+                />
+              </>
+            ) : (
+              <EmptyForm />
+            )}
+          </>
         )}
       </div>
     </section>
