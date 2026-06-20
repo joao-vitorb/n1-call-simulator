@@ -15,6 +15,7 @@ import { CallStage } from './CallStage';
 import { SacCallStage } from './SacCallStage';
 import { CallTranscript, type CallStatus } from './CallTranscript';
 import { CallCategorization } from './CallCategorization';
+import { TransferModal } from './TransferModal';
 
 function speedToRate(speed: string): number {
   const normalized = speed.toLowerCase();
@@ -57,6 +58,8 @@ export function TrainingCall() {
   const [aiBusy, setAiBusy] = useState(false);
   const [asrError, setAsrError] = useState<string | null>(null);
   const [sacCall, setSacCall] = useState<SacCall | null>(null);
+  const [reachedAttendant, setReachedAttendant] = useState<SacAttendant | null>(null);
+  const [showTransfer, setShowTransfer] = useState(false);
   const [dialError, setDialError] = useState<string | null>(null);
 
   const viewingCall =
@@ -154,6 +157,8 @@ export function TrainingCall() {
     setMuted(false);
     setPaused(false);
     setSacCall(null);
+    setReachedAttendant(null);
+    setShowTransfer(false);
     setDialError(null);
     setAsrError(null);
     setAiBusy(false);
@@ -174,6 +179,8 @@ export function TrainingCall() {
     setMuted(false);
     setPaused(false);
     setSacCall(null);
+    setReachedAttendant(null);
+    setShowTransfer(false);
     setDialError(null);
     hangUp();
   }
@@ -214,6 +221,7 @@ export function TrainingCall() {
       startedAt,
       messages: [{ role: 'customer', text: opening, timestamp: startedAt }],
     });
+    setReachedAttendant(attendant);
     setTtsActive(true);
     speak(opening, {
       onStart: () => setTtsActive(true),
@@ -227,6 +235,12 @@ export function TrainingCall() {
     setAiBusy(false);
     setSacCall(null);
     setPaused(false);
+  }
+
+  function handleTransferConfirmed() {
+    setShowTransfer(false);
+    setReachedAttendant(null);
+    handleHangUp();
   }
 
   const status: CallStatus = (() => {
@@ -290,6 +304,7 @@ export function TrainingCall() {
               onHangUp={handleHangUp}
               onToggleMute={handleToggleMute}
               onTogglePause={handleTogglePause}
+              onTransfer={() => setShowTransfer(true)}
             />
             {viewingCall ? (
               <>
@@ -311,6 +326,14 @@ export function TrainingCall() {
           </>
         )}
       </div>
+
+      {showTransfer && (
+        <TransferModal
+          reachedAttendant={reachedAttendant}
+          onClose={() => setShowTransfer(false)}
+          onConfirmed={handleTransferConfirmed}
+        />
+      )}
     </section>
   );
 }

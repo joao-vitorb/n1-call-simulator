@@ -10,6 +10,7 @@ type CallStageProps = {
   onHangUp: () => void;
   onToggleMute: () => void;
   onTogglePause: () => void;
+  onTransfer: () => void;
 };
 
 function PhoneIcon() {
@@ -33,6 +34,7 @@ export function CallStage({
   onHangUp,
   onToggleMute,
   onTogglePause,
+  onTransfer,
 }: CallStageProps) {
   const callSeconds = useElapsedTime(activeCall?.startedAt ?? null);
 
@@ -106,6 +108,7 @@ export function CallStage({
           </button>
           <button
             type="button"
+            onClick={onTransfer}
             className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
           >
             Transferência
