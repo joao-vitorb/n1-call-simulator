@@ -58,7 +58,7 @@ export function TrainingCall() {
   const [aiBusy, setAiBusy] = useState(false);
   const [asrError, setAsrError] = useState<string | null>(null);
   const [sacCall, setSacCall] = useState<SacCall | null>(null);
-  const [reachedAttendant, setReachedAttendant] = useState<SacAttendant | null>(null);
+  const [sacPaused, setSacPaused] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
   const [dialError, setDialError] = useState<string | null>(null);
 
@@ -69,7 +69,7 @@ export function TrainingCall() {
 
   const { supported: asrSupported } = useSpeechRecognition({
     active: sacCall
-      ? !muted && !ttsActive && !aiBusy
+      ? !muted && !sacPaused && !ttsActive && !aiBusy
       : !!activeCall && !muted && !paused && !ttsActive && !aiBusy,
     onResult: (transcript) => {
       if (sacCall) {
@@ -157,7 +157,7 @@ export function TrainingCall() {
     setMuted(false);
     setPaused(false);
     setSacCall(null);
-    setReachedAttendant(null);
+    setSacPaused(false);
     setShowTransfer(false);
     setDialError(null);
     setAsrError(null);
@@ -179,9 +179,10 @@ export function TrainingCall() {
     setMuted(false);
     setPaused(false);
     setSacCall(null);
-    setReachedAttendant(null);
+    setSacPaused(false);
     setShowTransfer(false);
     setDialError(null);
+    selectCall(null);
     hangUp();
   }
 
@@ -213,6 +214,7 @@ export function TrainingCall() {
     }
     cancelSpeech();
     setPaused(true);
+    setSacPaused(false);
     const attendant = pickSacAttendant();
     const startedAt = new Date().toISOString();
     const opening = sacOpeningLine(attendant);
@@ -221,7 +223,6 @@ export function TrainingCall() {
       startedAt,
       messages: [{ role: 'customer', text: opening, timestamp: startedAt }],
     });
-    setReachedAttendant(attendant);
     setTtsActive(true);
     speak(opening, {
       onStart: () => setTtsActive(true),
@@ -234,12 +235,23 @@ export function TrainingCall() {
     setTtsActive(false);
     setAiBusy(false);
     setSacCall(null);
+    setSacPaused(false);
     setPaused(false);
+  }
+
+  function handleTogglePauseSac() {
+    setSacPaused((value) => {
+      const next = !value;
+      if (next) {
+        cancelSpeech();
+        setTtsActive(false);
+      }
+      return next;
+    });
   }
 
   function handleTransferConfirmed() {
     setShowTransfer(false);
-    setReachedAttendant(null);
     handleHangUp();
   }
 
@@ -258,11 +270,14 @@ export function TrainingCall() {
   const sacStatus: CallStatus = (() => {
     if (!asrSupported) return 'unsupported';
     if (asrError) return 'error';
+    if (sacPaused) return 'paused';
     if (muted) return 'muted';
     if (aiBusy) return 'thinking';
     if (ttsActive) return 'speaking';
     return 'listening';
   })();
+
+  const isViewingActive = !!activeCall && viewingCall?.id === activeCall.id;
 
   return (
     <section className="flex flex-1">
@@ -284,7 +299,9 @@ export function TrainingCall() {
               attendant={sacCall.attendant}
               startedAt={sacCall.startedAt}
               muted={muted}
+              paused={sacPaused}
               onToggleMute={handleToggleMute}
+              onTogglePause={handleTogglePauseSac}
               onHangUp={handleHangUpSac}
             />
             <CallTranscript
@@ -292,12 +309,21 @@ export function TrainingCall() {
               contactName={sacCall.attendant.name}
               status={sacStatus}
               error={asrError}
+              title="Conversa com o SAC"
             />
+            {viewingCall && (
+              <CallCategorization
+                call={viewingCall}
+                onUpdate={(updates) => updateCallForm(viewingCall.id, updates)}
+                onSave={() => saveCall(viewingCall.id)}
+              />
+            )}
           </>
         ) : (
           <>
             <CallStage
-              activeCall={activeCall}
+              call={viewingCall}
+              isActive={isViewingActive}
               muted={muted}
               paused={paused}
               onReceive={handleReceiveCall}
@@ -329,7 +355,6 @@ export function TrainingCall() {
 
       {showTransfer && (
         <TransferModal
-          reachedAttendant={reachedAttendant}
           onClose={() => setShowTransfer(false)}
           onConfirmed={handleTransferConfirmed}
         />
