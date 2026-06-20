@@ -16,6 +16,7 @@ type CallTranscriptProps = {
   contactName: string;
   status: CallStatus;
   error: string | null;
+  title?: string;
 };
 
 const STATUS_LABEL: Record<CallStatus, string> = {
@@ -40,7 +41,13 @@ const STATUS_DOT: Record<CallStatus, string> = {
   error: 'bg-red-500',
 };
 
-export function CallTranscript({ messages, contactName, status, error }: CallTranscriptProps) {
+export function CallTranscript({
+  messages,
+  contactName,
+  status,
+  error,
+  title = 'Conversa',
+}: CallTranscriptProps) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -53,7 +60,7 @@ export function CallTranscript({ messages, contactName, status, error }: CallTra
   return (
     <section className="flex max-h-80 shrink-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white animate-fade-in">
       <div className="border-b border-zinc-200 px-5 py-3">
-        <h3 className="text-sm font-semibold text-zinc-900">Conversa</h3>
+        <h3 className="text-sm font-semibold text-zinc-900">{title}</h3>
       </div>
 
       <div ref={scrollerRef} className="flex-1 overflow-y-auto bg-zinc-50/50 p-4">

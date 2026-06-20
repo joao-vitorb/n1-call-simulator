@@ -1,9 +1,18 @@
 import { useElapsedTime } from '../../hooks/useElapsedTime';
 import { formatElapsed } from '../../utils/time';
 import type { CallEntry } from '../../types/trainingCall';
+import {
+  ControlButton,
+  HangupIcon,
+  MicIcon,
+  MicOffIcon,
+  PauseIcon,
+  TransferIcon,
+} from './CallControlButton';
 
 type CallStageProps = {
-  activeCall: CallEntry | null;
+  call: CallEntry | null;
+  isActive: boolean;
   muted: boolean;
   paused: boolean;
   onReceive: () => void;
@@ -27,7 +36,8 @@ function PhoneIcon() {
 }
 
 export function CallStage({
-  activeCall,
+  call,
+  isActive,
   muted,
   paused,
   onReceive,
@@ -36,9 +46,9 @@ export function CallStage({
   onTogglePause,
   onTransfer,
 }: CallStageProps) {
-  const callSeconds = useElapsedTime(activeCall?.startedAt ?? null);
+  const liveSeconds = useElapsedTime(isActive ? call?.startedAt ?? null : null);
 
-  if (!activeCall) {
+  if (!call) {
     return (
       <div className="shrink-0 rounded-xl border border-zinc-200 bg-white p-6 animate-fade-in">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -69,58 +79,49 @@ export function CallStage({
     <div className="shrink-0 rounded-xl border border-zinc-200 bg-white p-6 animate-fade-in">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-4 ring-emerald-50/60">
+          <span
+            className={`flex h-12 w-12 items-center justify-center rounded-full ${
+              isActive ? 'bg-emerald-50 text-emerald-600 ring-4 ring-emerald-50/60' : 'bg-zinc-100 text-zinc-400'
+            }`}
+          >
             <PhoneIcon />
           </span>
           <div>
-            <p className="font-mono text-lg font-medium text-zinc-900">{activeCall.phoneNumber}</p>
-            <p className="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500">
-              <span aria-hidden="true" className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-              Em ligação · <span className="font-mono text-emerald-600">{formatElapsed(callSeconds)}</span>
-            </p>
+            <p className="font-mono text-lg font-medium text-zinc-900">{call.phoneNumber}</p>
+            {isActive ? (
+              <p className="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500">
+                <span aria-hidden="true" className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                Em ligação · <span className="font-mono text-emerald-600">{formatElapsed(liveSeconds)}</span>
+              </p>
+            ) : (
+              <p className="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500">
+                <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-zinc-300" />
+                Ligação encerrada · <span className="font-mono">{formatElapsed(call.durationSeconds ?? 0)}</span>
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onToggleMute}
-            aria-pressed={muted}
-            className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
-              muted
-                ? 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100'
-                : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
-            }`}
-          >
-            {muted ? 'Mutado' : 'Mute'}
-          </button>
-          <button
-            type="button"
-            onClick={onTogglePause}
-            aria-pressed={paused}
-            className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
-              paused
-                ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
-            }`}
-          >
-            {paused ? 'Em espera' : 'Pause'}
-          </button>
-          <button
-            type="button"
-            onClick={onTransfer}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
-          >
-            Transferência
-          </button>
-          <button
-            type="button"
-            onClick={onHangUp}
-            className="rounded-lg bg-red-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-red-700"
-          >
-            Desligar
-          </button>
-        </div>
+        {isActive && (
+          <div className="flex items-center gap-2">
+            <ControlButton
+              icon={muted ? <MicOffIcon /> : <MicIcon />}
+              label={muted ? 'Mutado' : 'Mute'}
+              onClick={onToggleMute}
+              tone={muted ? 'active-red' : 'default'}
+              pressed={muted}
+            />
+            <ControlButton
+              icon={<PauseIcon />}
+              label={paused ? 'Em espera' : 'Pause'}
+              onClick={onTogglePause}
+              tone={paused ? 'active-amber' : 'default'}
+              pressed={paused}
+            />
+            <ControlButton icon={<TransferIcon />} label="Transferir" onClick={onTransfer} />
+            <ControlButton icon={<HangupIcon />} label="Desligar" onClick={onHangUp} tone="danger" />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -2,15 +2,13 @@ import { useMemo, useState } from 'react';
 import { SAC_ATTENDANTS, type SacAttendant } from '../../utils/sac';
 
 type TransferModalProps = {
-  reachedAttendant: SacAttendant | null;
   onClose: () => void;
   onConfirmed: (attendant: SacAttendant) => void;
 };
 
-export function TransferModal({ reachedAttendant, onClose, onConfirmed }: TransferModalProps) {
+export function TransferModal({ onClose, onConfirmed }: TransferModalProps) {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<SacAttendant | null>(null);
 
   const filtered = useMemo(() => {
@@ -25,11 +23,6 @@ export function TransferModal({ reachedAttendant, onClose, onConfirmed }: Transf
   function handleTransfer() {
     const attendant = SAC_ATTENDANTS.find((item) => item.extension === selected);
     if (!attendant) return;
-    if (reachedAttendant && attendant.extension !== reachedAttendant.extension) {
-      setError('O ramal selecionado não confere com a atendente que atendeu. Confirme o ramal com ela.');
-      return;
-    }
-    setError(null);
     setSuccess(attendant);
   }
 
@@ -93,10 +86,7 @@ export function TransferModal({ reachedAttendant, onClose, onConfirmed }: Transf
                 <li key={attendant.extension}>
                   <button
                     type="button"
-                    onClick={() => {
-                      setSelected(attendant.extension);
-                      setError(null);
-                    }}
+                    onClick={() => setSelected(attendant.extension)}
                     className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left transition-colors ${
                       active
                         ? 'border-indigo-300 bg-indigo-50'
@@ -111,8 +101,6 @@ export function TransferModal({ reachedAttendant, onClose, onConfirmed }: Transf
             })
           )}
         </ul>
-
-        {error && <p className="mt-3 text-xs text-red-600">{error}</p>}
       </div>
 
       <div className="flex items-center justify-end gap-3 border-t border-zinc-200 px-6 py-4">

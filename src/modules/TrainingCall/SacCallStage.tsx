@@ -1,16 +1,27 @@
 import { useElapsedTime } from '../../hooks/useElapsedTime';
 import { formatElapsed } from '../../utils/time';
 import { SAC_NUMBER, type SacAttendant } from '../../utils/sac';
+import { ControlButton, HangupIcon, MicIcon, MicOffIcon, PauseIcon } from './CallControlButton';
 
 type SacCallStageProps = {
   attendant: SacAttendant;
   startedAt: string;
   muted: boolean;
+  paused: boolean;
   onToggleMute: () => void;
+  onTogglePause: () => void;
   onHangUp: () => void;
 };
 
-export function SacCallStage({ attendant, startedAt, muted, onToggleMute, onHangUp }: SacCallStageProps) {
+export function SacCallStage({
+  attendant,
+  startedAt,
+  muted,
+  paused,
+  onToggleMute,
+  onTogglePause,
+  onHangUp,
+}: SacCallStageProps) {
   const seconds = useElapsedTime(startedAt);
 
   return (
@@ -22,7 +33,8 @@ export function SacCallStage({ attendant, startedAt, muted, onToggleMute, onHang
           </span>
           <div>
             <p className="text-sm font-medium text-zinc-900">
-              SAC · {attendant.name} <span className="font-mono text-zinc-500">(ramal {attendant.extension})</span>
+              SAC · {attendant.name}{' '}
+              <span className="font-mono text-zinc-500">(ramal {attendant.extension})</span>
             </p>
             <p className="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500">
               <span aria-hidden="true" className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
@@ -34,25 +46,21 @@ export function SacCallStage({ attendant, startedAt, muted, onToggleMute, onHang
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <ControlButton
+            icon={muted ? <MicOffIcon /> : <MicIcon />}
+            label={muted ? 'Mutado' : 'Mute'}
             onClick={onToggleMute}
-            aria-pressed={muted}
-            className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
-              muted
-                ? 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100'
-                : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
-            }`}
-          >
-            {muted ? 'Mutado' : 'Mute'}
-          </button>
-          <button
-            type="button"
-            onClick={onHangUp}
-            className="rounded-lg bg-red-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-red-700"
-          >
-            Desligar 3002
-          </button>
+            tone={muted ? 'active-red' : 'default'}
+            pressed={muted}
+          />
+          <ControlButton
+            icon={<PauseIcon />}
+            label={paused ? 'Em espera' : 'Pause'}
+            onClick={onTogglePause}
+            tone={paused ? 'active-amber' : 'default'}
+            pressed={paused}
+          />
+          <ControlButton icon={<HangupIcon />} label="Desligar 3002" onClick={onHangUp} tone="danger" />
         </div>
       </div>
     </div>
