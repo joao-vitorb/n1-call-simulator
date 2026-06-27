@@ -22,6 +22,14 @@ function capitalize(text: string): string {
 }
 
 function vagueSymptom(scenario: Scenario): string {
+  if (scenario.demandType === 'ticket-status') return 'queria saber do meu chamado';
+  if (scenario.demandType === 'commercial') {
+    if (scenario.faultCategory.includes('fatura')) return 'queria resolver uma coisa da fatura';
+    if (scenario.faultCategory.includes('nf')) return 'preciso de um documento aí';
+    if (scenario.faultCategory.includes('cancel')) return 'queria falar sobre o meu contrato';
+    if (scenario.faultCategory.includes('desbloqueio')) return 'tô com o serviço bloqueado';
+    return 'queria resolver uma coisa comercial';
+  }
   if (scenario.faultCategory.startsWith('voz')) return 'tô com problema no telefone';
   return 'tô com problema na internet';
 }
@@ -37,6 +45,9 @@ export function localCustomerReply(scenario: Scenario, history: ConversationMess
   const company = findCompanyById(scenario.companyId);
   const firstName = scenario.contactName.split(' ')[0];
   const cnpj = company?.cnpj ?? '';
+  const isServiceProblem =
+    scenario.demandType === 'technical' ||
+    (scenario.demandType === 'massiva' && scenario.faultCategory !== 'ticket-status');
 
   const lastAgent = [...history].reverse().find((message) => message.role === 'agent');
   const agentText = lastAgent ? normalize(lastAgent.text) : '';
@@ -46,7 +57,7 @@ export function localCustomerReply(scenario: Scenario, history: ConversationMess
     return pick(['Oi, boa tarde.', 'Alô.', `Oi, aqui é ${firstName}.`]);
   }
 
-  if (has(agentText, /nome|com quem (eu )?falo|quem (e|esta) falando/)) {
+  if (has(agentText, /\bnome\b|com quem (eu )?falo|quem (e|esta) falando/)) {
     return pick([firstName, `É ${firstName}.`, `Meu nome é ${firstName}.`]);
   }
 
@@ -65,7 +76,7 @@ export function localCustomerReply(scenario: Scenario, history: ConversationMess
 
   if (
     scenario.ticketProtocol &&
-    has(agentText, /chamado|protocolo|numero da os|ordem de servico/)
+    has(agentText, /(qual|numero|n |me (passa|da|informa)|tem o|sabe o|informa).*(chamad|protocolo|\bos\b|ordem)/)
   ) {
     return pick([
       scenario.ticketProtocol,
@@ -74,38 +85,80 @@ export function localCustomerReply(scenario: Scenario, history: ConversationMess
     ]);
   }
 
+  if (
+    has(
+      agentText,
+      /momento|minuto|instante|segundinho|perai|aguard|espera|so um (momento|minuto|instante|segundo|pouco)|ja (volto|retorno|te respondo|ja te)|vou (ver|olhar|verificar|checar|consultar)|deixa eu (ver|olhar|checar|verificar|consultar)/,
+    )
+  ) {
+    return pick(['Tá bom, tô no aguardo.', 'Ok, sem problema.', 'Pode verificar, eu espero.']) + moodFlavor(scenario);
+  }
+
+  if (has(agentText, /transferir|transferindo|setor responsavel|encaminhar|outro setor|passar pro setor/)) {
+    return pick(['Tá bom, pode transferir.', 'Ok, obrigado.', 'Beleza, vou aguardar.']) + moodFlavor(scenario);
+  }
+
+  if (
+    has(
+      agentText,
+      /encontrei|achei|localizei|aberto|em andamento|andamento|tratativa|investigac|investiga|equipe|verificac|prazo|previsao|sla|encerrad|finalizad|massiv|interno|rede interna|resolv/,
+    )
+  ) {
+    return pick([
+      'Ah, entendi. Então é só aguardar?',
+      'Tá bom, obrigado pela informação.',
+      'Certo. Tem previsão de resolver?',
+      'Entendi. E o que eu faço agora?',
+    ]) + moodFlavor(scenario);
+  }
+
+  if (isServiceProblem) {
+    if (has(agentText, /quando|que horas|horario|desde quando|comec|faz quanto|ha quanto|quanto tempo (faz|que|isso)/)) {
+      return pick([
+        'Faz uns vinte minutos mais ou menos.',
+        'Começou hoje de manhã.',
+        'Agora há pouco, faz uns quinze minutos.',
+        'Faz mais ou menos uma hora.',
+      ]) + moodFlavor(scenario);
+    }
+    if (has(agentText, /reinici|resetar|\breset\b|desliga(r| e liga)|tira(r)? da tomada|tirou da tomada|ja tentou|ja reiniciou/)) {
+      return pick([
+        'Já reiniciei e não adiantou.',
+        'Já desliguei e liguei de novo, continua igual.',
+        'Tentei reiniciar o aparelho e nada.',
+      ]) + moodFlavor(scenario);
+    }
+    if (has(agentText, /computador|aparelho|dispositivo|maquina|no wifi|no cabo|todos os|todo lugar|outros aparelhos|so (nesse|nele|um aparelho)/)) {
+      return pick([
+        'Tá tudo sem internet aqui.',
+        'Não funciona em aparelho nenhum.',
+        'É em todos, não pega em lugar nenhum.',
+      ]) + moodFlavor(scenario);
+    }
+    if (has(agentText, /\bluz|\bled|sinal do modem|modem (ta|esta)|cor da luz|luzes|piscando/)) {
+      return pick([
+        'O modem tá com uma luz vermelha.',
+        'Tem uma luz piscando aqui, diferente do normal.',
+        'As luzes tão estranhas, não como sempre.',
+      ]) + moodFlavor(scenario);
+    }
+  }
+
   const narrowing = has(
     agentText,
-    /todos|algum|especific|ddd|recebendo|fazendo|origina|externa|interna|so (alguns|um)|de novo|exatamente|como assim/,
+    /todos|algum|especific|ddd|recebendo|fazendo|origina|externa|interna|de novo|exatamente|como assim/,
   );
 
   if (
     narrowing ||
-    has(agentText, /problema|acontec|ajud|motivo|como posso|o que.*(ocorr|houve|rolou)|me (conta|explica|fala)|qual.*(problema|situacao)/)
+    has(agentText, /problema|acontec|ajud|motivo|como posso|o que.*(ocorr|houve|rolou)|me (conta|explica|fala)|qual.*(problema|situacao|caso)/)
   ) {
     const giveFull = scenario.disclosureStyle === 'forthcoming' || narrowing || agentCount >= 2;
     return giveFull ? `${capitalize(scenario.symptom)}.` : `${capitalize(vagueSymptom(scenario))}.`;
   }
 
-  if (has(agentText, /transferir|transferindo|setor responsavel|encaminhar|outro setor/)) {
-    return pick(['Tá bom, pode transferir.', 'Ok, obrigado.', 'Beleza, vou aguardar.']) + moodFlavor(scenario);
-  }
-
-  if (has(agentText, /momento|aguard|verificar|checar|espera|so um|ja (volto|retorno)|vou (ver|olhar|verificar)|deixa eu (ver|olhar)/)) {
-    return pick(['Tá bom, tô no aguardo.', 'Ok.', 'Sem problema, pode verificar.']) + moodFlavor(scenario);
-  }
-
-  if (has(agentText, /test|normal|internamente|rede interna|tecnico|resolv|chamado|ordem de servico|protocolo|prazo|sla|abrir/)) {
-    return pick([
-      'Ah tá, entendi.',
-      'Certo. E quanto tempo isso vai levar?',
-      'Tá bom. Então o problema é interno aqui?',
-      'Entendi, e o que eu faço agora?',
-    ]) + moodFlavor(scenario);
-  }
-
-  if (has(agentText, /obrigad|mais alguma|qualquer coisa|posso ajudar em algo|encerr|finaliz|tenha um/)) {
-    return pick(['Tá bom, obrigado.', 'Era só isso mesmo, obrigado.', 'Ok, valeu.']);
+  if (has(agentText, /obrigad|mais alguma|qualquer coisa|posso ajudar em algo|encerr|finaliz|tenha um|bom dia$|boa tarde$|ate (mais|logo)/)) {
+    return pick(['Tá bom, obrigado.', 'Era só isso mesmo, obrigado.', 'Ok, valeu. Tchau.']);
   }
 
   if (has(agentText, /bom dia|boa tarde|boa noite|ola|alo|^oi/)) {
@@ -113,9 +166,9 @@ export function localCustomerReply(scenario: Scenario, history: ConversationMess
   }
 
   return pick([
-    'Como assim?',
-    `Não sei te dizer, só sei que ${vagueSymptom(scenario)}.`,
-    'Desculpa, não entendi. Pode repetir?',
-    `Olha, eu só queria resolver isso, ${vagueSymptom(scenario)}.`,
+    `Pois é, eu só queria resolver isso. ${capitalize(vagueSymptom(scenario))}.`,
+    'Desculpa, não entendi bem. Pode repetir?',
+    'Hmm, isso eu não sei te dizer.',
+    `Olha, ${vagueSymptom(scenario)}, é o que eu sei.`,
   ]);
 }
