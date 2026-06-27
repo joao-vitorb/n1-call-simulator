@@ -45,6 +45,17 @@ export function sacReplyLocal(attendant: SacAttendant, history: ConversationMess
     .map((message) => message.text)
     .join(' ');
   const agentText = normalize(agentRaw);
+  const lastAgentText = normalize(
+    [...history].reverse().find((message) => message.role === 'agent')?.text ?? '',
+  );
+
+  if (/obrigad|valeu|bom trabalho|ate (mais|logo|breve)|tchau|falou|abraco|otimo|excelente/.test(lastAgentText)) {
+    return pick([
+      'Imagina! Pode transferir o cliente, tô no aguardo.',
+      'De nada! Pode mandar, até mais.',
+      'Tranquilo, qualquer coisa estou à disposição. Até mais!',
+    ]);
+  }
 
   const identified = /\bn1\b|\bhd\b|help ?desk|suporte|atendente|tecnic/.test(agentText);
   const hasDemand =
